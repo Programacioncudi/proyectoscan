@@ -1,0 +1,7 @@
+C:\Projects\ScannerAPI\ScannerAPI\obj\Debug\net9.0-windows\ScannerAPI.csproj.AssemblyReference.cache
+C:\Projects\ScannerAPI\ScannerAPI\obj\Debug\net9.0-windows\ScannerAPI.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\ScannerAPI\ScannerAPI\obj\Debug\net9.0-windows\ScannerAPI.AssemblyInfoInputs.cache
+C:\Projects\ScannerAPI\ScannerAPI\obj\Debug\net9.0-windows\ScannerAPI.AssemblyInfo.cs
+C:\Projects\ScannerAPI\ScannerAPI\obj\Debug\net9.0-windows\ScannerAPI.csproj.CoreCompileInputs.cache
+C:\Projects\ScannerAPI\ScannerAPI\obj\Debug\net9.0-windows\ScannerAPI.MvcApplicationPartsAssemblyInfo.cs
+C:\Projects\ScannerAPI\ScannerAPI\obj\Debug\net9.0-windows\ScannerAPI.MvcApplicationPartsAssemblyInfo.cache
