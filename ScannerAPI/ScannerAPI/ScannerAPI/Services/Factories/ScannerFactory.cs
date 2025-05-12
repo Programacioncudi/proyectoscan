@@ -1,49 +1,37 @@
-using ScannerAPI.Infrastructure.Wrappers;
-using ScannerAPI.Services.Interfaces;
-using ScannerAPI.Utilities;
 using Microsoft.Extensions.Logging;
+using System;
 
-namespace ScannerAPI.Services.Factories
+namespace ScannerAPI
 {
-    /// <summary>
-    /// Fábrica de instancias de escáner según tipo y arquitectura.
-    /// </summary>
-    public class ScannerFactory : IScannerFactory
+    public static class ScannerFactory
     {
-        private readonly ILogger<ScannerFactory> _logger;
-        private readonly BitnessHelper _bitnessHelper;
-        private readonly ILogger<Twain32Interop> _twain32Logger;
-        private readonly ILogger<Twain64Interop> _twain64Logger;
-        private readonly ILogger<WiaInterop> _wiaLogger;
-
-        public ScannerFactory(
-            ILogger<ScannerFactory> logger,
-            BitnessHelper bitnessHelper,
-            ILogger<Twain32Interop> twain32Logger,
-            ILogger<Twain64Interop> twain64Logger,
-            ILogger<WiaInterop> wiaLogger)
+        public static IScanner CreateScanner(ScannerType type, ILogger logger = null)
         {
-            _logger = logger;
-            _bitnessHelper = bitnessHelper;
-            _twain32Logger = twain32Logger;
-            _twain64Logger = twain64Logger;
-            _wiaLogger = wiaLogger;
+            if (!IsSupported(type))
+                throw new ScannerException("Tipo de escáner no soportado en este sistema.");
+
+            try
+            {
+                return type switch
+                {
+                    ScannerType.WIA => new ScannerWIA(logger),
+                    ScannerType.TWAIN => new ScannerTwain(logger),
+                    _ => throw new ScannerException("Tipo de escáner no implementado.")
+                };
+            }
+            catch (DllNotFoundException ex)
+            {
+                logger?.LogCritical(ex, "Falta biblioteca requerida");
+                throw new ScannerException("Controladores no instalados.", ex, ScannerErrorCode.DriverNotFound);
+            }
         }
 
-        /// <summary>
-        /// Crea una implementación de escáner basada en el tipo especificado.
-        /// </summary>
-        /// <param name="scannerType">Tipo del escáner: wia, twain32, twain64</param>
-        /// <returns>Implementación concreta de IScannerWrapper</returns>
-        public IScannerWrapper CreateScanner(string scannerType)
+        private static bool IsSupported(ScannerType type)
         {
-            return scannerType.ToLower() switch
-            {
-                "wia" => new WiaInterop(_wiaLogger),
-                "twain32" => new Twain32Interop(_twain32Logger, _bitnessHelper, null!),
-                "twain64" => new Twain64Interop(_twain64Logger, _bitnessHelper, null!),
-                _ => throw new ArgumentException($"Tipo de escáner no soportado: {scannerType}")
-            };
+            if (type == ScannerType.TWAIN && Environment.OSVersion.Platform != PlatformID.Win32NT)
+                return false;
+
+            return true;
         }
     }
 }

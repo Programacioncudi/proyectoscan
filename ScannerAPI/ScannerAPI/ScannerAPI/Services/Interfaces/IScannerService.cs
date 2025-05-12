@@ -1,27 +1,28 @@
-using ScannerAPI.Models.Scanner;
+// ScannerAPI/Interfaces/IScannerService.cs
+using System.Collections.Generic;
+using WIA;
 
-namespace ScannerAPI.Services.Interfaces;
-
-/// <summary>
-/// Interfaz para el servicio de escaneo que soporta múltiples tecnologías (WIA/TWAIN)
-/// </summary>
-public interface IScannerService
+namespace ScannerAPI.Interfaces
 {
-    /// <summary>
-    /// Obtiene la lista de dispositivos escáner disponibles
-    /// </summary>
-    Task<DeviceInfo[]> GetAvailableDevicesAsync();
+    public interface IScannerService
+    {
+        // Selección y configuración de dispositivo WIA 2.0
+        void SelectWIA2Device(string deviceId = null);
+        void ConfigureWIA2Scan(
+            int brightness = 0,
+            int contrast = 0,
+            int dpi = 300,
+            bool useADF = false,
+            bool duplex = false,
+            string colorMode = "Color",
+            string paperSize = "A4");
 
-    /// <summary>
-    /// Realiza un escaneo con las opciones especificadas
-    /// </summary>
-    /// <param name="options">Configuración del escaneo</param>
-    /// <param name="sessionId">ID de sesión para seguimiento</param>
-    /// <returns>Resultado del escaneo con la imagen y metadatos</returns>
-    Task<ScanResult> ScanDocumentAsync(ScanOptions options, string sessionId);
+        // Operaciones de escaneo WIA 2.0
+        List<ImageFile> ScanWithWIA2(int pageCount = 1, string format = "jpeg");
+        Task<List<ImageFile>> ScanWithWIA2Async(int pageCount = 1, string format = "jpeg");
 
-    /// <summary>
-    /// Obtiene las capacidades de un dispositivo específico
-    /// </summary>
-    Task<DeviceCapabilities> GetDeviceCapabilitiesAsync(string deviceId);
+        // Métodos comunes
+        List<string> GetAvailableWIA2Devices();
+        void SaveImages(List<ImageFile> images, string outputPath, string format = "jpeg");
+    }
 }

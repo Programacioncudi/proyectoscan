@@ -1,45 +1,71 @@
-using Microsoft.AspNetCore.Mvc;
-using ScannerAPI.Models.Scanner;
-using ScannerAPI.Services.Interfaces;
-using Microsoft.AspNetCore.Authorization;
+// Añadir al inicio del archivo
+using WIA2 = WIA; // Para claridad en el código que usaremos WIA 2.0
+using System.Security;
 
-namespace ScannerAPI.Controllers
+public class ScannerController : IDisposable
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize(Policy = "ScannerBasic")]
-    public class ScannerController : ControllerBase
+    private WIA2.DeviceManager _wiaManager;
+    private bool _disposed = false;
+    
+    // Constructor seguro
+    public ScannerController()
     {
-        private readonly IScannerService _scannerService;
-        private readonly IScannerSessionService _sessionService;
-        private readonly ILogger<ScannerController> _logger;
-
-        public ScannerController(
-            IScannerService scannerService,
-            IScannerSessionService sessionService,
-            ILogger<ScannerController> logger)
+        try
         {
-            _scannerService = scannerService;
-            _sessionService = sessionService;
-            _logger = logger;
+            _wiaManager = new WIA2.DeviceManagerClass(); // Usando WIA 2.0 explícitamente
         }
-
-        /// <summary>
-        /// Obtiene la lista de dispositivos escáner disponibles.
-        /// </summary>
-        [HttpGet("devices")]
-        public async Task<ActionResult<IEnumerable<DeviceInfo>>> GetAvailableDevices()
+        catch (COMException ex)
         {
-            try
-            {
-                var devices = await _scannerService.GetAvailableDevicesAsync();
-                return Ok(devices);
-            }
-            catch (ScannerException ex)
-            {
-                _logger.LogError(ex, "Error getting scanner devices");
-                return StatusCode(500, new { message = "Error al obtener los dispositivos de escaneo." });
-            }
+            throw new SecurityException("Error al acceder a WIA. Verifique permisos.", ex);
         }
     }
+
+    // Método para listar dispositivos con validación
+    public IEnumerable<ScannerDevice> ListDevices()
+    {
+        if (_disposed) throw new ObjectDisposedException(nameof(ScannerController));
+        
+        try
+        {
+            return _wiaManager.DeviceInfos.Cast<WIA2.DeviceInfo>()
+                .Select(d => new ScannerDevice
+                {
+                    Id = d.DeviceID,
+                    Name = d.Properties["Name"].get_Value().ToString()
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            // Loggear el error adecuadamente
+            throw new ScannerException("Error al listar dispositivos", ex);
+        }
+    }
+
+    // Implementación IDisposable segura
+    public void Dispose()
+    {
+        if (_disposed) return;
+        
+        if (_wiaManager != null)
+        {
+            Marshal.ReleaseComObject(_wiaManager);
+            _wiaManager = null;
+        }
+        
+        _disposed = true;
+        GC.SuppressFinalize(this);
+    }
+
+    // Destructor por seguridad
+    ~ScannerController()
+    {
+        Dispose();
+    }
+}
+
+// Nueva clase de excepción específica
+public class ScannerException : Exception
+{
+    public ScannerException(string message, Exception inner) : base(message, inner) { }
 }
