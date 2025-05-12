@@ -1,11 +1,16 @@
 using ScannerAPI.Models.Scanner;
-using System;
+using System.Threading.Tasks;
 
-namespace ScannerAPI.Services.Interfaces;
-
-public interface IScannerWrapper
+namespace ScannerAPI.Services.Interfaces
 {
-    Task<ScanResult> ScanAsync(ScanOptions options, IProgress<ScanProgress> progress);
-    Task<DeviceInfo[]> GetDevicesAsync();
-    Task<DeviceCapabilities> GetDeviceCapabilitiesAsync(string deviceId);
+    /// <summary>
+    /// Define una interfaz común para controlar dispositivos escáner (TWAIN o WIA).
+    /// </summary>
+    public interface IScannerWrapper
+    {
+        /// <summary>
+        /// Realiza un escaneo con las opciones especificadas y guarda en el destino indicado.
+        /// </summary>
+        Task<ScanResult> ScanAsync(ScanOptions options, string outputPath);
+    }
 }

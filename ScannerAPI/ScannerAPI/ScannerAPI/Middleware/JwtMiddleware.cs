@@ -3,82 +3,84 @@ using Microsoft.IdentityModel.Tokens;
 using ScannerAPI.Models.Auth;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Security.Claims;
 
-namespace ScannerAPI.Middleware;
-
-/// <summary>
-/// Middleware para validación de tokens JWT
-/// </summary>
-public class JwtMiddleware
+namespace ScannerAPI.Middleware
 {
-    private readonly RequestDelegate _next;
-    private readonly JwtConfig _jwtConfig;
-
-    public JwtMiddleware(RequestDelegate next, IOptions<JwtConfig> jwtConfig)
+    /// <summary>
+    /// Middleware para validación de tokens JWT
+    /// </summary>
+    public class JwtMiddleware
     {
-        _next = next;
-        _jwtConfig = jwtConfig.Value;
-    }
+        private readonly RequestDelegate _next;
+        private readonly JwtConfig _jwtConfig;
 
-    public async Task Invoke(HttpContext context)
-    {
-        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-
-        if (token != null)
+        public JwtMiddleware(RequestDelegate next, IOptions<JwtConfig> jwtConfig)
         {
-            await AttachUserToContext(context, token);
+            _next = next;
+            _jwtConfig = jwtConfig.Value;
         }
 
-        await _next(context);
-    }
-
-    private async Task AttachUserToContext(HttpContext context, string token)
-    {
-        try
+        public async Task Invoke(HttpContext context)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_jwtConfig.SecretKey);
-            
-            tokenHandler.ValidateToken(token, new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = true,
-                ValidIssuer = _jwtConfig.Issuer,
-                ValidateAudience = true,
-                ValidAudience = _jwtConfig.Audience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            }, out SecurityToken validatedToken);
+            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
-            var jwtToken = (JwtSecurityToken)validatedToken;
-            var claims = jwtToken.Claims.ToList();
-
-            // Agregar claims personalizados
-            var accessLevel = claims.FirstOrDefault(c => c.Type == "access_level")?.Value;
-            if (!string.IsNullOrEmpty(accessLevel))
+            if (token != null)
             {
-                claims.Add(new Claim(ClaimTypes.Role, GetRoleFromAccessLevel(accessLevel)));
+                await AttachUserToContext(context, token);
             }
 
-            var identity = new ClaimsIdentity(claims, "jwt");
-            context.User = new ClaimsPrincipal(identity);
+            await _next(context);
         }
-        catch (Exception ex)
-        {
-            // Token inválido - no hacemos nada, la solicitud continuará sin autenticación
-            var logger = context.RequestServices.GetRequiredService<ILogger<JwtMiddleware>>();
-            logger.LogWarning(ex, "Error validating JWT token");
-        }
-    }
 
-    private string GetRoleFromAccessLevel(string accessLevel)
-    {
-        return accessLevel switch
+        private async Task AttachUserToContext(HttpContext context, string token)
         {
-            "3" => "Admin",
-            "2" => "Advanced",
-            _ => "Basic"
-        };
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.ASCII.GetBytes(_jwtConfig.SecretKey);
+
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = _jwtConfig.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = _jwtConfig.Audience,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                }, out SecurityToken validatedToken);
+
+                var jwtToken = (JwtSecurityToken)validatedToken;
+                var claims = jwtToken.Claims.ToList();
+
+                // Agregar claims personalizados
+                var accessLevel = claims.FirstOrDefault(c => c.Type == "access_level")?.Value;
+                if (!string.IsNullOrEmpty(accessLevel))
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, GetRoleFromAccessLevel(accessLevel)));
+                }
+
+                var identity = new ClaimsIdentity(claims, "jwt");
+                context.User = new ClaimsPrincipal(identity);
+            }
+            catch (Exception ex)
+            {
+                // Token inválido - no hacemos nada, la solicitud continuará sin autenticación
+                var logger = context.RequestServices.GetRequiredService<ILogger<JwtMiddleware>>();
+                logger.LogWarning(ex, "Error validating JWT token");
+            }
+        }
+
+        private string GetRoleFromAccessLevel(string accessLevel)
+        {
+            return accessLevel switch
+            {
+                "3" => "Admin",
+                "2" => "Advanced",
+                _ => "Basic"
+            };
+        }
     }
 }

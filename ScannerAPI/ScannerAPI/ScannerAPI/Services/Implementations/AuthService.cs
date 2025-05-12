@@ -1,64 +1,51 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using ScannerAPI.Database;
+using Microsoft.IdentityModel.Tokens;
 using ScannerAPI.Models.Auth;
-using ScannerAPI.Security;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace ScannerAPI.Services.Implementations;
-
-public class AuthService : IAuthService
+namespace ScannerAPI.Services
 {
-    private readonly JwtConfig _jwtConfig;
-    private readonly ApplicationDbContext _context;
-
-    public AuthService(IOptions<JwtConfig> jwtConfig, ApplicationDbContext context)
+    /// <summary>
+    /// Servicio de autenticación con generación de tokens JWT.
+    /// </summary>
+    public class AuthService
     {
-        _jwtConfig = jwtConfig.Value;
-        _context = context;
-    }
+        private readonly JwtConfig _config;
 
-    public async Task<AuthResponse> AuthenticateAsync(string username, string password)
-    {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-        
-        if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
-            throw new Exception("Invalid credentials");
-
-        var token = GenerateJwtToken(user);
-        
-        return new AuthResponse
+        public AuthService(IOptions<JwtConfig> config)
         {
-            Token = token,
-            AccessLevel = user.AccessLevel
-        };
-    }
+            _config = config.Value;
+        }
 
-    private string GenerateJwtToken(User user)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_jwtConfig.SecretKey);
-        var tokenDescriptor = new SecurityTokenDescriptor
+        /// <summary>
+        /// Genera un token JWT para el usuario autenticado.
+        /// </summary>
+        public string GenerateToken(User user)
         {
-            Subject = new ClaimsIdentity(new[]
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_config.SecretKey);
+            var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
                 new Claim("access_level", ((int)user.AccessLevel).ToString())
-            }),
-            Expires = DateTime.UtcNow.AddMinutes(_jwtConfig.ExpiryMinutes),
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key), 
-                SecurityAlgorithms.HmacSha256Signature)
-        };
-        
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
-    }
+            };
 
-    public async Task<User> GetUserByIdAsync(int id)
-    {
-        return await _context.Users.FindAsync(id);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(2),
+                Issuer = _config.Issuer,
+                Audience = _config.Audience,
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
     }
 }

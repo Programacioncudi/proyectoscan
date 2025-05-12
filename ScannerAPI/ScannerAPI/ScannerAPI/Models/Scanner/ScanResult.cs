@@ -1,16 +1,23 @@
-namespace ScannerAPI.Models.Scanner;
-
-public class ScanResult
+namespace ScannerAPI.Models.Scanner
 {
-    public byte[] ImageData { get; set; }
-    public string Format { get; set; }
-    public ScanMetadata Metadata { get; set; }
-}
+    /// <summary>
+    /// Resultado de una operación de escaneo.
+    /// </summary>
+    public class ScanResult
+    {
+        /// <summary>
+        /// Indica si el escaneo fue exitoso.
+        /// </summary>
+        public bool Success { get; set; }
 
-public class ScanMetadata
-{
-    public int Width { get; set; }
-    public int Height { get; set; }
-    public int DPI { get; set; }
-    public int SizeKB { get; set; }
+        /// <summary>
+        /// Ruta del archivo resultante del escaneo.
+        /// </summary>
+        public string OutputPath { get; set; }
+
+        /// <summary>
+        /// Mensaje adicional o de error, si corresponde.
+        /// </summary>
+        public string Message { get; set; }
+    }
 }

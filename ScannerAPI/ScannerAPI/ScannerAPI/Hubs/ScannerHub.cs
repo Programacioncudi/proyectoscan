@@ -1,60 +1,27 @@
 using Microsoft.AspNetCore.SignalR;
-using ScannerAPI.Models.Events;
-using System.Security.Claims;
+using System.Threading.Tasks;
 
-namespace ScannerAPI.Hubs;
-
-/// <summary>
-/// Hub SignalR para notificaciones en tiempo real del escáner
-/// </summary>
-[Authorize]
-public class ScannerHub : Hub
+namespace ScannerAPI.Hubs
 {
-    private readonly IEventBusService _eventBus;
-    private readonly ILogger<ScannerHub> _logger;
-
-    public ScannerHub(IEventBusService eventBus, ILogger<ScannerHub> logger)
-    {
-        _eventBus = eventBus;
-        _logger = logger;
-    }
-
     /// <summary>
-    /// Suscribe al cliente a los eventos de una sesión específica
+    /// Hub de SignalR para comunicar eventos de escaneo en tiempo real.
     /// </summary>
-    public async Task SubscribeToSession(string sessionId)
+    public class ScannerHub : Hub
     {
-        try
+        /// <summary>
+        /// Método llamado cuando un cliente se une a un grupo por ID de escáner.
+        /// </summary>
+        public async Task JoinScannerGroup(string scannerId)
         {
-            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            await Groups.AddToGroupAsync(Context.ConnectionId, sessionId);
-            _logger.LogInformation("User {UserId} subscribed to session {SessionId}", userId, sessionId);
-            
-            // Enviar estado actual si existe
-            var lastEvent = await _eventBus.GetLastEventAsync(sessionId);
-            if (lastEvent != null)
-            {
-                await Clients.Caller.SendAsync("ScanEvent", lastEvent);
-            }
+            await Groups.AddToGroupAsync(Context.ConnectionId, scannerId);
         }
-        catch (Exception ex)
+
+        /// <summary>
+        /// Método llamado cuando un cliente sale del grupo.
+        /// </summary>
+        public async Task LeaveScannerGroup(string scannerId)
         {
-            _logger.LogError(ex, "Error subscribing to session");
-            throw;
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, scannerId);
         }
-    }
-
-    public override async Task OnConnectedAsync()
-    {
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        _logger.LogInformation("Client connected: {ConnectionId}, User: {UserId}", Context.ConnectionId, userId);
-        await base.OnConnectedAsync();
-    }
-
-    public override async Task OnDisconnectedAsync(Exception exception)
-    {
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        _logger.LogInformation("Client disconnected: {ConnectionId}, User: {UserId}", Context.ConnectionId, userId);
-        await base.OnDisconnectedAsync(exception);
     }
 }

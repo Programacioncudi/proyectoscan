@@ -18,15 +18,22 @@ public class WiaWrapper : IScannerWrapper
     {
         try
         {
-            var deviceManager = new DeviceManager();
-            return Task.FromResult(deviceManager.DeviceInfos.Cast<Interop.WIA.DeviceInfo>()
-                .Select(d => new DeviceInfo
+            var deviceManager = new DeviceManagerClass(); // Cambiado a DeviceManagerClass
+            var deviceInfos = new List<DeviceInfo>();
+            
+            foreach (var deviceInfo in deviceManager.DeviceInfos)
+            {
+                var di = (DeviceInfo)deviceInfo;
+                deviceInfos.Add(new DeviceInfo
                 {
-                    Id = d.DeviceID,
-                    Name = d.Properties["Name"].ToString(),
+                    Id = di.DeviceID,
+                    Name = GetPropertyValue(di.Properties, "Name"),
                     IsConnected = true,
                     Type = "WIA"
-                }).ToArray());
+                });
+            }
+
+            return Task.FromResult(deviceInfos.ToArray());
         }
         catch (COMException ex)
         {
@@ -39,17 +46,18 @@ public class WiaWrapper : IScannerWrapper
     {
         try
         {
-            var deviceManager = new DeviceManager();
-            var device = deviceManager.DeviceInfos[options.DeviceId].Connect();
+            var deviceManager = new DeviceManagerClass(); // Cambiado a DeviceManagerClass
+            var device = (Device)deviceManager.DeviceInfos[options.DeviceId].Connect(); // Cast explícito
             
             progress?.Report(new ScanProgress(10, "Device connected"));
 
-            var item = device.Items[1];
+            var item = (Item)device.Items[1]; // Cast explícito
             ConfigureItem(item, options);
 
             progress?.Report(new ScanProgress(30, "Starting scan..."));
 
-            var imageFile = (ImageFile)item.Transfer(GetFormatId(options.Format));
+            var formatId = GetFormatId(options.Format);
+            var imageFile = (ImageFile)item.Transfer(formatId);
 
             progress?.Report(new ScanProgress(70, "Processing image..."));
 
@@ -76,17 +84,35 @@ public class WiaWrapper : IScannerWrapper
 
     private void ConfigureItem(Item item, ScanOptions options)
     {
-        SetWiaProperty(item.Properties, 6146, (int)2); // Color
-        SetWiaProperty(item.Properties, 6147, options.DPI);
-        SetWiaProperty(item.Properties, 6148, options.DPI);
+        SetWiaProperty(item.Properties, WIA_PROPERTIES.WIA_IPS_CUR_INTENT, (int)2); // Color
+        SetWiaProperty(item.Properties, WIA_PROPERTIES.WIA_IPS_XRES, options.DPI);
+        SetWiaProperty(item.Properties, WIA_PROPERTIES.WIA_IPS_YRES, options.DPI);
+    }
+
+    private string GetPropertyValue(IProperties properties, string propertyName)
+    {
+        try
+        {
+            foreach (var prop in properties)
+            {
+                var p = (Property)prop;
+                if (p.Name == propertyName)
+                    return p.get_Value().ToString();
+            }
+            return string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     private string GetFormatId(string format) => format.ToUpper() switch
     {
-        "JPEG" => "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}",
-        "PNG" => "{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}",
-        "TIFF" => "{B96B3CB1-0728-11D3-9D7B-0000F81EF32E}",
-        _ => "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}" // JPEG por defecto
+        "JPEG" => WIA_FORMATS.WIA_FORMAT_JPEG,
+        "PNG" => WIA_FORMATS.WIA_FORMAT_PNG,
+        "TIFF" => WIA_FORMATS.WIA_FORMAT_TIFF,
+        _ => WIA_FORMATS.WIA_FORMAT_JPEG // Default
     };
 
     private static void SetWiaProperty(IProperties properties, int propId, object value)
@@ -110,5 +136,19 @@ public class WiaWrapper : IScannerWrapper
             SupportedResolutions = new[] { 75, 150, 200, 300, 600, 1200 },
             SupportedFormats = new[] { "JPEG", "PNG", "TIFF" }
         });
+    }
+
+    private static class WIA_PROPERTIES
+    {
+        public const int WIA_IPS_CUR_INTENT = 6146;
+        public const int WIA_IPS_XRES = 6147;
+        public const int WIA_IPS_YRES = 6148;
+    }
+
+    private static class WIA_FORMATS
+    {
+        public const string WIA_FORMAT_JPEG = "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}";
+        public const string WIA_FORMAT_PNG = "{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}";
+        public const string WIA_FORMAT_TIFF = "{B96B3CB1-0728-11D3-9D7B-0000F81EF32E}";
     }
 }
