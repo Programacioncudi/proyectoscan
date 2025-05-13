@@ -1,17 +1,31 @@
-namespace ScannerAPI.Models.Auth;
+// File: Models/Auth/User.cs
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
-public class User
+namespace ScannerAPI.Models.Auth
 {
-    public int Id { get; set; }
-    public string Username { get; set; }
-    public string PasswordHash { get; set; }
-    public ScannerAccessLevel AccessLevel { get; set; }
-    public DateTime LastLogin { get; set; }
-}
+    /// <summary>
+    /// Representa un usuario del sistema.
+    /// </summary>
+    public class User
+    {
+        /// <summary>Identificador único.</summary>
+        [Key]
+        public Guid Id { get; set; }
 
-public enum ScannerAccessLevel
-{
-    Basic = 1,
-    Advanced = 2,
-    Admin = 3
+        /// <summary>Nombre de usuario.</summary>
+        [Required]
+        [MaxLength(50)]
+        public string Username { get; set; }
+
+        /// <summary>Email del usuario.</summary>
+        [Required]
+        [EmailAddress]
+        [MaxLength(100)]
+        public string Email { get; set; }
+
+        /// <summary>Roles asignados.</summary>
+        public ICollection<UserRole> Roles { get; set; }
+    }
 }

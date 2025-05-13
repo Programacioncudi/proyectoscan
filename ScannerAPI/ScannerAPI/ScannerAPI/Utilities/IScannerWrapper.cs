@@ -1,10 +1,15 @@
+using System.Threading;
+using System.Threading.Tasks;
+using ScannerAPI.Models.Scanner;
+
 namespace ScannerAPI.Utilities
 {
+    /// <summary>
+    /// Interfaz común para wrappers de dispositivos de escaneo.
+    /// </summary>
     public interface IScannerWrapper
     {
-        /// <summary>
-        /// Inicia un escaneo y devuelve la imagen en un array de bytes (por ejemplo PNG).
-        /// </summary>
-        byte[] Scan(string deviceId);
+        bool Supports(ScanOptions options);
+        Task<ScanResult> ScanAsync(ScanOptions options, string outputPath, CancellationToken cancellationToken = default);
     }
 }

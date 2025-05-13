@@ -1,9 +1,19 @@
-namespace ScannerAPI.Models.Auth;
+// File: Models/Auth/AuthResponse.cs
+using System;
+using System.ComponentModel.DataAnnotations;
 
-public class AuthResponse
+namespace ScannerAPI.Models.Auth
 {
-    public string Token { get; set; }
-    public int AccessLevel { get; set; }
-    public DateTime ValidUntil { get; set; }
-    public string RefreshToken { get; set; }
+    /// <summary>
+    /// Respuesta de autenticación.
+    /// </summary>
+    public class AuthResponse
+    {
+        /// <summary>Token JWT generado.</summary>
+        [Required]
+        public string Token { get; set; }
+
+        /// <summary>Fecha y hora de expiración UTC del token.</summary>
+        public DateTime ExpiresAt { get; set; }
+    }
 }

@@ -1,45 +1,57 @@
+// File: Services/ScannerSessionService.cs
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using ScannerAPI.Database;
 using ScannerAPI.Models.Scanner;
-using ScannerAPI.Services.Interfaces;
 
-namespace ScannerAPI.Services.Implementations;
-
-public class ScannerSessionService : IScannerSessionService
+namespace ScannerAPI.Services
 {
-    private readonly ApplicationDbContext _context;
-
-    public ScannerSessionService(ApplicationDbContext context)
+    /// <inheritdoc/>
+    public class ScannerSessionService : IScannerSessionService
     {
-        _context = context;
-    }
+        private readonly ApplicationDbContext _context;
 
-    public async Task<ScanSession> CreateSessionAsync(string username, SessionOptions options)
-    {
-        var session = new ScanSession
+        public ScannerSessionService(ApplicationDbContext context)
         {
-            Id = Guid.NewGuid().ToString(),
-            UserId = username,
-            DeviceId = options.DeviceId,
-            Status = "Active"
-        };
+            _context = context;
+        }
 
-        await _context.ScanSessions.AddAsync(session);
-        await _context.SaveChangesAsync();
-
-        return session;
-    }
-
-    public Task<ScanSession> GetSessionAsync(string sessionId)
-    {
-        return _context.ScanSessions.FindAsync(sessionId).AsTask();
-    }
-
-    public async Task EndSessionAsync(string sessionId)
-    {
-        var session = await _context.ScanSessions.FindAsync(sessionId);
-        if (session != null)
+        public async Task<ScanSession> CreateSessionAsync(ScanOptions options)
         {
-            session.Status = "Completed";
+            var session = new ScanSession
+            {
+                SessionId = Guid.NewGuid(),
+                ScanId = Guid.NewGuid().ToString(),
+                StartedAt = DateTime.UtcNow,
+                DeviceId = options.DeviceId,
+                UserId = Guid.Parse((string)options.GetType()
+                    .GetProperty("UserId")?
+                    .GetValue(options) ?? "00000000-0000-0000-0000-000000000000" )
+            };
+            _context.ScanSessions.Add(session);
+            await _context.SaveChangesAsync();
+            return session;
+        }
+
+        public async Task<IEnumerable<ScanSession>> GetAllAsync()
+        {
+            return await _context.ScanSessions.ToListAsync();
+        }
+
+        public async Task<ScanSession> GetByIdAsync(Guid sessionId)
+        {
+            return await _context.ScanSessions.FindAsync(sessionId);
+        }
+
+        public async Task CloseSessionAsync(Guid sessionId)
+        {
+            var session = await _context.ScanSessions.FindAsync(sessionId);
+            if (session == null)
+                throw new DomainException("NotFound", "Sesión no encontrada.");
+
+            session.CompletedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
     }

@@ -1,86 +1,67 @@
+// File: Middleware/JwtMiddleware.cs
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using ScannerAPI.Models.Auth;
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
-using System.Security.Claims;
+using ScannerAPI.Models.Config;
 
 namespace ScannerAPI.Middleware
 {
     /// <summary>
-    /// Middleware para validación de tokens JWT
+    /// Extrae y valida el JWT en cada petición.
     /// </summary>
     public class JwtMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly JwtConfig _jwtConfig;
+        private readonly JwtConfig _config;
 
-        public JwtMiddleware(RequestDelegate next, IOptions<JwtConfig> jwtConfig)
+        public JwtMiddleware(RequestDelegate next, IOptions<JwtConfig> config)
         {
             _next = next;
-            _jwtConfig = jwtConfig.Value;
+            _config = config.Value;
         }
 
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-
+            var token = context.Request.Headers["Authorization"]
+                             .FirstOrDefault()?
+                             .Split(" ")
+                             .Last();
             if (token != null)
-            {
-                await AttachUserToContext(context, token);
-            }
+                AttachUserToContext(context, token);
 
             await _next(context);
         }
 
-        private async Task AttachUserToContext(HttpContext context, string token)
+        private void AttachUserToContext(HttpContext context, string token)
         {
             try
             {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.ASCII.GetBytes(_jwtConfig.SecretKey);
-
-                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                var handler = new JwtSecurityTokenHandler();
+                var key = System.Text.Encoding.ASCII.GetBytes(_config.SecretKey);
+                handler.ValidateToken(token, new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateIssuer = true,
-                    ValidIssuer = _jwtConfig.Issuer,
+                    ValidIssuer = _config.Issuer,
                     ValidateAudience = true,
-                    ValidAudience = _jwtConfig.Audience,
-                    ValidateLifetime = true,
+                    ValidAudience = _config.Audience,
                     ClockSkew = TimeSpan.Zero
                 }, out SecurityToken validatedToken);
 
                 var jwtToken = (JwtSecurityToken)validatedToken;
-                var claims = jwtToken.Claims.ToList();
-
-                // Agregar claims personalizados
-                var accessLevel = claims.FirstOrDefault(c => c.Type == "access_level")?.Value;
-                if (!string.IsNullOrEmpty(accessLevel))
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, GetRoleFromAccessLevel(accessLevel)));
-                }
-
-                var identity = new ClaimsIdentity(claims, "jwt");
-                context.User = new ClaimsPrincipal(identity);
+                var userId = jwtToken.Claims.First(x => x.Type == "id").Value;
+                context.Items["UserId"] = userId;
             }
-            catch (Exception ex)
+            catch
             {
-                // Token inválido - no hacemos nada, la solicitud continuará sin autenticación
-                var logger = context.RequestServices.GetRequiredService<ILogger<JwtMiddleware>>();
-                logger.LogWarning(ex, "Error validating JWT token");
+                // Si el token es inválido o expiró, no adjuntamos usuario al contexto
             }
-        }
-
-        private string GetRoleFromAccessLevel(string accessLevel)
-        {
-            return accessLevel switch
-            {
-                "3" => "Admin",
-                "2" => "Advanced",
-                _ => "Basic"
-            };
         }
     }
 }
+

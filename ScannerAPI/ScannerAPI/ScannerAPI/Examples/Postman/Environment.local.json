@@ -1,0 +1,9 @@
+// Examples/Postman/Environment.local.json
+{
+  "id": "env-local",
+  "name": "Local ScannerAPI",
+  "values": [
+    { "key": "baseUrl", "value": "http://localhost:5000", "enabled": true },
+    { "key": "jwtToken", "value": "", "enabled": true }
+  ]
+}

@@ -1,27 +1,28 @@
+// File: Infrastructure/Serialization/ScanResultSerializer.cs
 using System.Text.Json;
 using ScannerAPI.Models.Scanner;
 
 namespace ScannerAPI.Infrastructure.Serialization
 {
     /// <summary>
-    /// Serializador y deserializador de resultados de escaneo.
+    /// Serializa y deserializa ScanResult.
     /// </summary>
-    public static class ScanResultSerializer
+    public class ScanResultSerializer
     {
-        /// <summary>
-        /// Serializa un resultado de escaneo a una cadena JSON.
-        /// </summary>
-        public static string Serialize(ScanResult result)
+        private readonly JsonSerializerOptions _options;
+
+        public ScanResultSerializer(JsonSerializerOptions options)
         {
-            return JsonSerializer.Serialize(result);
+            _options = options;
         }
 
-        /// <summary>
-        /// Deserializa un JSON a un objeto ScanResult.
-        /// </summary>
-        public static ScanResult Deserialize(string json)
-        {
-            return JsonSerializer.Deserialize<ScanResult>(json)!;
-        }
+        public string Serialize(ScanResult result)
+            => JsonSerializer.Serialize(result, _options);
+
+        public ScanResult Deserialize(string json)
+            => JsonSerializer.Deserialize<ScanResult>(json, _options)!;
+    }
+}
+
     }
 }

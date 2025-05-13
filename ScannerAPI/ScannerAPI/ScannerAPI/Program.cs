@@ -1,105 +1,114 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
-using System.Text;
-using System.Text.Json.Serialization;
+// File: Program.cs
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using ScannerAPI.Database;
 using ScannerAPI.Middleware;
-using ScannerAPI.Security;
-using ScannerAPI.Services.Interfaces;
-using ScannerAPI.Services.Implementations;
-using ScannerAPI.Services.Factories;
-using ScannerAPI.Utilities;
-using ScannerAPI.Infrastructure.Wrappers;
+using ScannerAPI.HealthChecks;
 using ScannerAPI.Hubs;
+using ScannerAPI.RateLimiting;
+using ScannerAPI.Security.Policies;
+using ScannerAPI.Utilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using ScannerAPI.Models.Config;
 
-namespace ScannerAPI
-{
-    var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
-    // Configuración base
-    builder.Services.AddControllers().AddJsonOptions(opt =>
+// Configuración
+builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection("Jwt"));
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Servicios
+builder.Services.AddScoped<IDatabaseInitializer, DatabaseInitializer>();
+builder.Services.AddSingleton<IStorageService, LocalScannerStorage>(sp =>
+    new LocalScannerStorage(builder.Configuration["Storage:RootPath"], sp.GetRequiredService<ILogger<LocalScannerStorage>>()));
+builder.Services.AddScoped<IDateTimeProvider, DateTimeProvider>();
+builder.Services.AddScoped<IScannerService, ScannerService>();
+builder.Services.AddScoped<IScannerSessionService, ScannerSessionService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+// Autenticación
+var jwtConfig = builder.Configuration.GetSection("Jwt").Get<JwtConfig>();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-    });
-    builder.Services.AddSignalR();
-    builder.Services.AddEndpointsApiExplorer();
-
-    // Configuración de Swagger
-    builder.Services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("v1", new OpenApiInfo { Title = "ScannerAPI", Version = "v1" });
-
-        var securityScheme = new OpenApiSecurityScheme
-        {
-            Name = "JWT Authentication",
-            Description = "Ingrese su token JWT",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.Http,
-            Scheme = "bearer"
-        };
-
-        c.AddSecurityDefinition("Bearer", securityScheme);
-        c.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-            { securityScheme, new string[] { } }
-        });
-    });
-
-    // Base de datos
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-    // Servicios
-    builder.Services.AddScoped<IAuthService, AuthService>();
-    builder.Services.AddScoped<IScannerService, ScannerService>();
-    builder.Services.AddScoped<IScannerSessionService, ScannerSessionService>();
-    builder.Services.AddScoped<IPdfService, PdfService>();
-    builder.Services.AddScoped<IEventBusService, EventBusService>();
-    builder.Services.AddScoped<IScannerFactory, ScannerFactory>();
-    builder.Services.AddScoped<IImageProcessor, ImageProcessor>();
-    builder.Services.AddScoped<IScannerWrapper, ScannerWrapperFactory>();
-
-    builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection("JwtConfig"));
-
-    // JWT
-    var key = Encoding.ASCII.GetBytes(builder.Configuration["JwtConfig:Secret"]);
-    builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    }).AddJwtBearer(options =>
-    {
+        var key = Encoding.ASCII.GetBytes(jwtConfig.SecretKey);
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateIssuer = false,
-            ValidateAudience = false
+            ValidateIssuer = true,
+            ValidIssuer = jwtConfig.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtConfig.Audience,
+            ClockSkew = TimeSpan.Zero
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    context.Token = accessToken;
+                return Task.CompletedTask;
+            }
         };
     });
 
-    var app = builder.Build();
+// Autorización
+builder.Services.AddAuthorization(AuthorizationPolicies.AddPolicies);
+builder.Services.AddSingleton<IAuthorizationHandler, RoleRequirementHandler>();
 
-    // Middleware personalizado
-    app.UseMiddleware<ErrorHandlingMiddleware>();
-    app.UseMiddleware<ScannerAccessMiddleware>();
-    app.UseMiddleware<SignalRAuthMiddleware>();
-    app.UseMiddleware<SignalRConnectionMiddleware>();
+// Salud y Rate Limiting
+builder.Services.AddHealthChecks().AddCheck<ScannerHealthCheck>("scanner_health");
+builder.Services.AddOptions<RateLimitOptions>().Bind(builder.Configuration.GetSection("RateLimiting")).ValidateDataAnnotations();
+builder.Services.AddSingleton<IRateLimitStore, MemoryRateLimitStore>();
 
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
+// CORS
+builder.Services.AddCors(options => options.AddPolicy(Constants.CorsPolicyName, policy =>
+{
+    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+}));
 
-    app.UseHttpsRedirection();
-    app.UseAuthentication();
-    app.UseAuthorization();
+// SignalR
+builder.Services.AddSignalR();
 
-    app.MapControllers();
-    app.MapHub<ScannerHub>("/scannerHub");
+// Controllers y Swagger
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
-    app.Run();
+var app = builder.Build();
+
+// Inicializar BD
+task.Run(async () => {
+    using var scope = app.Services.CreateScope();
+    var initializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializer>();
+    await initializer.InitializeAsync();
+});
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseHttpsRedirection();
+app.UseRouting();
+app.UseCors(Constants.CorsPolicyName);
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseRateLimiting();
+
+app.MapControllers();
+app.MapHealthChecks("/health");
+app.MapHub<ScannerHub>("/hubs/scanner");
+
+app.Run();

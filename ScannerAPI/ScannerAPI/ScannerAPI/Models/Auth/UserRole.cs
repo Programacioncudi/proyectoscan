@@ -1,30 +1,19 @@
-namespace ScannerAPI.Models.Events
+// File: Models/Auth/UserRole.cs
+using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
+
+namespace ScannerAPI.Models.Auth
 {
     /// <summary>
-    /// Representa un evento de progreso emitido durante un proceso (como escaneo o carga).
+    /// Roles disponibles en la aplicación.
     /// </summary>
-    public class ProgressEvent
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum UserRole
     {
-        /// <summary>
-        /// Porcentaje completado del proceso.
-        /// </summary>
-        public int Percentage { get; set; }
+        [EnumMember(Value = "ADMIN")]
+        Admin,
 
-        /// <summary>
-        /// Mensaje opcional de estado.
-        /// </summary>
-        public string? StatusMessage { get; set; }
-
-        /// <summary>
-        /// Identificador opcional del proceso al que pertenece el progreso.
-        /// </summary>
-        public string? TaskId { get; set; }
-
-        public ProgressEvent(int percentage, string? statusMessage = null, string? taskId = null)
-        {
-            Percentage = percentage;
-            StatusMessage = statusMessage;
-            TaskId = taskId;
-        }
+        [EnumMember(Value = "USER")]
+        User
     }
 }

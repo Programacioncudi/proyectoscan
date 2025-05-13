@@ -1,53 +1,74 @@
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using ScannerAPI.Models.Auth;
+
+// File: Services/AuthService.cs
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using ScannerAPI.Database;
+using ScannerAPI.Models.Auth;
+using ScannerAPI.Models;
 
 namespace ScannerAPI.Services
 {
-    /// <summary>
-    /// Servicio responsable de generar y validar tokens JWT.
-    /// </summary>
-    public class AuthService
+    /// <inheritdoc/>
+    public class AuthService : IAuthService
     {
-        private readonly JwtConfig _config;
+        private readonly ApplicationDbContext _context;
+        private readonly IJwtTokenService _tokenService;
+        private readonly IPasswordHasher<User> _passwordHasher;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(IOptions<JwtConfig> config)
+        public AuthService(
+            ApplicationDbContext context,
+            IJwtTokenService tokenService,
+            IPasswordHasher<User> passwordHasher,
+            ILogger<AuthService> logger)
         {
-            _config = config.Value;
+            _context = context;
+            _tokenService = tokenService;
+            _passwordHasher = passwordHasher;
+            _logger = logger;
         }
 
-        /// <summary>
-        /// Genera un token JWT con los claims del usuario autenticado.
-        /// </summary>
-        public string GenerateToken(User user)
+        public async Task<AuthResponse> RegisterAsync(RegisterRequest dto)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_config.SecretKey);
+            if (await _context.Users.AnyAsync(u => u.Email == dto.Username))
+                throw new DomainException("UserExists", "El email ya está registrado.");
 
-            var claims = new List<Claim>
+            var user = new User
             {
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role.ToString()),
-                new Claim("access_level", ((int)user.AccessLevel).ToString())
+                Id = Guid.NewGuid(),
+                Username = dto.Username,
+                Email = dto.Username,
+                Roles = new List<UserRole> { UserRole.User }
             };
+            user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(1),
-                Issuer = _config.Issuer,
-                Audience = _config.Audience,
-                SigningCredentials = new SigningCredentials(
-                    new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Usuario {UserId} registrado exitosamente.", user.Id);
 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            var token = _tokenService.GenerateToken(user);
+            return new AuthResponse { Token = token, ExpiresAt = DateTime.UtcNow.AddMinutes(_tokenService.ExpiryMinutes) };
+        }
+
+        public async Task<AuthResponse> LoginAsync(LoginRequest dto)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == dto.Username);
+            if (user == null)
+                throw new DomainException("InvalidCredentials", "Credenciales inválidas.");
+
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
+            if (result == PasswordVerificationResult.Failed)
+                throw new DomainException("InvalidCredentials", "Credenciales inválidas.");
+
+            _logger.LogInformation("Usuario {UserId} inició sesión.", user.Id);
+            var token = _tokenService.GenerateToken(user);
+            return new AuthResponse { Token = token, ExpiresAt = DateTime.UtcNow.AddMinutes(_tokenService.ExpiryMinutes) };
         }
     }
 }
+

@@ -1,18 +1,31 @@
+// File: HealthChecks/ScannerHealthCheck.cs
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Threading;
 using System.Threading.Tasks;
+using ScannerAPI.Services;
 
 namespace ScannerAPI.HealthChecks
 {
     /// <summary>
-    /// Verifica si el servicio de escaneo está disponible (implementación básica).
+    /// Comprueba disponibilidad del escáner.
     /// </summary>
     public class ScannerHealthCheck : IHealthCheck
     {
-        public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+        private readonly IScannerService _scannerService;
+
+        public ScannerHealthCheck(IScannerService scannerService)
         {
-            // Aquí podrías agregar lógica real para verificar hardware, etc.
-            return Task.FromResult(HealthCheckResult.Healthy("El servicio de escaneo está operativo."));
+            _scannerService = scannerService;
+        }
+
+        public async Task<HealthCheckResult> CheckHealthAsync(
+            HealthCheckContext context,
+            CancellationToken cancellationToken = default)
+        {
+            var isAvailable = await _scannerService.IsScannerAvailableAsync(cancellationToken);
+            return isAvailable
+                ? HealthCheckResult.Healthy("Escáner operativo.")
+                : HealthCheckResult.Unhealthy("No se detecta escáner.");
         }
     }
 }

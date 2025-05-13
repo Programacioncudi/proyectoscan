@@ -1,61 +1,71 @@
+// File: Controllers/AuthController.cs
 using Microsoft.AspNetCore.Mvc;
-using ScannerAPI.Models.Auth;
-using ScannerAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
+using ScannerAPI.Services;
+using ScannerAPI.Models.Api;
+using ScannerAPI.Models.Auth;
+using ScannerAPI.Models;
 
-namespace ScannerAPI.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class AuthController : ControllerBase
+namespace ScannerAPI.Controllers
 {
-    private readonly IAuthService _authService;
-    private readonly ILogger<AuthController> _logger;
-
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
     {
-        _authService = authService;
-        _logger = logger;
-    }
+        private readonly IAuthService _authService;
 
-    /// <summary>
-    /// Autentica un usuario y genera un token JWT con los permisos correspondientes
-    /// </summary>
-    /// <param name="request">Credenciales de acceso</param>
-    /// <returns>Respuesta con token JWT y nivel de acceso</returns>
-    [HttpPost("login")]
-    [AllowAnonymous]
-    public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
-    {
-        try
+        public AuthController(IAuthService authService)
         {
-            var response = await _authService.AuthenticateAsync(request.Username, request.Password);
-            _logger.LogInformation("Login successful for user: {Username}", request.Username);
-            return Ok(response);
+            _authService = authService;
         }
-        catch (AuthenticationException ex)
+
+        /// <summary>
+        /// Registra un nuevo usuario.
+        /// </summary>
+        /// <param name="dto">Datos de registro.</param>
+        /// <returns>Token de autenticación y fecha de expiración.</returns>
+        [HttpPost("register")]
+        [ProducesResponseType(typeof(ApiResponse<AuthResponse>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest dto)
         {
-            _logger.LogWarning("Authentication failed for user: {Username}", request.Username);
-            return Unauthorized(new { message = ex.Message });
+            if (!ModelState.IsValid)
+                return BadRequest(new ApiResponse<object> { Success = false, Error = new ApiError { Code = "InvalidData", Message = "Datos de registro inválidos." } });
+
+            try
+            {
+                var result = await _authService.RegisterAsync(dto);
+                return Ok(new ApiResponse<AuthResponse> { Success = true, Data = result });
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new ApiResponse<object> { Success = false, Error = new ApiError { Code = ex.Code, Message = ex.Message } });
+            }
         }
-    }
 
-    /// <summary>
-    /// Verifica si el token actual es válido y devuelve información del usuario
-    /// </summary>
-    [HttpGet("validate")]
-    [Authorize]
-    public IActionResult ValidateToken()
-    {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var username = User.FindFirst(ClaimTypes.Name)?.Value;
-        var accessLevel = User.FindFirst("access_level")?.Value;
+        /// <summary>
+        /// Autentica un usuario y genera un token JWT.
+        /// </summary>
+        /// <param name="dto">Credenciales de login.</param>
+        /// <returns>Token JWT y fecha de expiración.</returns>
+        [HttpPost("login")]
+        [ProducesResponseType(typeof(ApiResponse<AuthResponse>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+        public async Task<IActionResult> Login([FromBody] LoginRequest dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new ApiResponse<object> { Success = false, Error = new ApiError { Code = "InvalidData", Message = "Datos de login inválidos." } });
 
-        return Ok(new {
-            UserId = userId,
-            Username = username,
-            AccessLevel = accessLevel,
-            IsValid = true
-        });
+            try
+            {
+                var result = await _authService.LoginAsync(dto);
+                return Ok(new ApiResponse<AuthResponse> { Success = true, Data = result });
+            }
+            catch (DomainException ex)
+            {
+                return Unauthorized(new ApiResponse<object> { Success = false, Error = new ApiError { Code = ex.Code, Message = ex.Message } });
+            }
+        }
     }
 }

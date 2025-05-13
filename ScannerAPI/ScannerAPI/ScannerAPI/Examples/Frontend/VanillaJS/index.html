@@ -1,0 +1,22 @@
+<!-- Examples/VanillaJS/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanner Example</title>
+</head>
+<body>
+  <form id="scanForm">
+    <input type="text" id="deviceId" placeholder="Device ID" required />
+    <input type="number" id="dpi" placeholder="DPI" value="300" />
+    <select id="format">
+      <option>PDF</option><option>JPEG</option><option>PNG</option>
+    </select>
+    <label><input type="checkbox" id="duplex" /> Duplex</label>
+    <button type="submit">Scan</button>
+  </form>
+  <pre id="output"></pre>
+  <script src="scanner.js"></script>
+</body>
+</html>

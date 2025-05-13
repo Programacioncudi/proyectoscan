@@ -1,30 +1,23 @@
+// File: Models/Api/ApiResponse.cs
+using System.Text.Json.Serialization;
+
 namespace ScannerAPI.Models.Api
 {
     /// <summary>
-    /// Representa una respuesta genérica del API para compatibilidad con consumidores externos.
+    /// Contenedor genérico para respuestas API.
     /// </summary>
-    public class ApiResponse
+    /// <typeparam name="T">Tipo de datos devueltos.</typeparam>
+    public class ApiResponse<T>
     {
-        /// <summary>
-        /// Indica si la operación fue exitosa.
-        /// </summary>
+        /// <summary>Indica si la operación fue exitosa.</summary>
         public bool Success { get; set; }
 
-        /// <summary>
-        /// Mensaje informativo o de error.
-        /// </summary>
-        public string? Message { get; set; }
+        /// <summary>Datos devueltos cuando Success es true.</summary>
+        [JsonPropertyName("data")]
+        public T Data { get; set; }
 
-        /// <summary>
-        /// Objeto con datos adicionales opcionales.
-        /// </summary>
-        public object? Data { get; set; }
-
-        public ApiResponse(bool success, string? message = null, object? data = null)
-        {
-            Success = success;
-            Message = message;
-            Data = data;
-        }
+        /// <summary>Información de error cuando Success es false.</summary>
+        [JsonPropertyName("error")]
+        public ApiError Error { get; set; }
     }
 }

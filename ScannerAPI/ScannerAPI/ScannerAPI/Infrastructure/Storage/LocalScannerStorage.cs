@@ -1,52 +1,70 @@
+// File: Infrastructure/Storage/LocalScannerStorage.cs
+using System;
 using System.IO;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using ScannerAPI.Services;
 
 namespace ScannerAPI.Infrastructure.Storage
 {
     /// <summary>
-    /// Servicio de almacenamiento local para imágenes y documentos escaneados.
+    /// Implementación local de <see cref="IStorageService"/>, guarda archivos en disco.
     /// </summary>
-    public class LocalScannerStorage
+    public class LocalScannerStorage : IStorageService
     {
         private readonly string _baseDirectory;
+        private readonly ILogger<LocalScannerStorage> _logger;
 
-        public LocalScannerStorage(string baseDirectory)
+        public LocalScannerStorage(string baseDirectory, ILogger<LocalScannerStorage> logger)
         {
-            _baseDirectory = baseDirectory;
-            if (!Directory.Exists(_baseDirectory))
-                Directory.CreateDirectory(_baseDirectory);
+            if (string.IsNullOrWhiteSpace(baseDirectory))
+                throw new ArgumentException("Base directory inválido.", nameof(baseDirectory));
+
+            _baseDirectory = Path.GetFullPath(baseDirectory);
+            Directory.CreateDirectory(_baseDirectory);
+            _logger = logger;
         }
 
-        /// <summary>
-        /// Guarda un archivo en el almacenamiento local.
-        /// </summary>
-        public string SaveFile(string fileName, byte[] data)
+        public async Task<string> SaveFileAsync(string fileName, byte[] data)
         {
-            var fullPath = Path.Combine(_baseDirectory, fileName);
-            File.WriteAllBytes(fullPath, data);
-            return fullPath;
+            var safeName = Path.GetFileName(fileName);
+            var fullPath = Path.Combine(_baseDirectory, safeName);
+            try
+            {
+                await File.WriteAllBytesAsync(fullPath, data);
+                return fullPath;
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "Error guardando archivo {File}", fullPath);
+                throw;
+            }
         }
 
-        /// <summary>
-        /// Obtiene un archivo del almacenamiento local.
-        /// </summary>
-        public byte[]? ReadFile(string fileName)
+        public async Task<byte[]> ReadFileAsync(string fileName)
         {
-            var fullPath = Path.Combine(_baseDirectory, fileName);
-            return File.Exists(fullPath) ? File.ReadAllBytes(fullPath) : null;
+            var fullPath = Path.Combine(_baseDirectory, Path.GetFileName(fileName));
+            if (!File.Exists(fullPath))
+                throw new FileNotFoundException("Archivo no encontrado", fullPath);
+
+            return await File.ReadAllBytesAsync(fullPath);
         }
 
-        /// <summary>
-        /// Elimina un archivo del almacenamiento local.
-        /// </summary>
-        public bool DeleteFile(string fileName)
+        public Task<bool> DeleteFileAsync(string fileName)
         {
-            var fullPath = Path.Combine(_baseDirectory, fileName);
-            if (File.Exists(fullPath))
+            var fullPath = Path.Combine(_baseDirectory, Path.GetFileName(fileName));
+            if (!File.Exists(fullPath))
+                return Task.FromResult(false);
+            try
             {
                 File.Delete(fullPath);
-                return true;
+                return Task.FromResult(true);
             }
-            return false;
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "Error eliminando archivo {File}", fullPath);
+                return Task.FromResult(false);
+            }
         }
     }
 }

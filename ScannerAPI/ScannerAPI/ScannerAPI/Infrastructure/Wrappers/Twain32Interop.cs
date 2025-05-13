@@ -1,62 +1,80 @@
-using Microsoft.Extensions.Logging;
-using NTwain;
-using ScannerAPI.Models.Scanner;
-using ScannerAPI.Utilities;
-using ScannerAPI.Services.Interfaces;
+// File: Infrastructure/Wrappers/Twain32Interop.cs
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NTwain;
+using NTwain.Data;
+using ScannerAPI.Models.Scanner;
 
 namespace ScannerAPI.Infrastructure.Wrappers
 {
     /// <summary>
-    /// Implementación de escaneo TWAIN 32-bit usando NTwain.
+    /// Implementación TWAIN 32 bits usando NTwain.
     /// </summary>
     public class Twain32Interop : TwainInteropBase
     {
-        public Twain32Interop(ILogger<Twain32Interop> logger, BitnessHelper bitnessHelper, ITwainConfig twainConfig)
-            : base(logger, bitnessHelper, twainConfig)
+        private readonly TwainSession _session;
+        private readonly ILogger<Twain32Interop> _logger;
+
+        public Twain32Interop(ILogger<Twain32Interop> logger)
         {
+            _logger = logger;
+            _session = new TwainSession(TWIdentity.CreateFromAssembly(DataGroups.Image, Assembly.GetExecutingAssembly()));
+            _session.Open();
         }
 
-        public override async Task<ScanResult> ScanAsync(ScanOptions options, string? outputFolder)
+        public override bool Supports(ScanOptions options)
         {
-            try
+            return _session.SourceCount > 0;
+        }
+
+        public override async Task<ScanResult> ScanAsync(ScanOptions options, string outputPath, CancellationToken cancellationToken = default)
+        {
+            var source = _session.SourceManager.FirstOrDefault(s => s.Name == options.DeviceId);
+            if (source == null)
+                throw new InvalidOperationException($"Dispositivo {options.DeviceId} no encontrado.");
+
+            _session.CurrentSource = source;
+            source.Capabilities.ICapXResolution.SetCurrentValue(options.Dpi);
+            source.Capabilities.ICapYResolution.SetCurrentValue(options.Dpi);
+            source.Capabilities.ICapFeederEnabled.SetValue(true, true);
+            source.Capabilities.ICapDuplexEnabled.SetValue(options.Duplex, true);
+
+            var buffer = new MemoryStream();
+            source.DataTransferred += (s, e) =>
             {
-                _session = new TWainSession(TWIdentity.CreateFromAssembly(DataGroups.Image, _bitnessHelper.Is64Bit));
-                _session.Open();
-                ConfigureSource(_session, options);
+                var bytes = e.GetNativeImageBytes();
+                buffer.Write(bytes, 0, bytes.Length);
+            };
 
-                var source = _session.GetSources().FirstOrDefault(s => s.ProductName == options.DeviceId);
-                if (source == null)
-                    throw new Exception($"Escáner TWAIN no encontrado: {options.DeviceId}");
-
-                _session.CurrentSource = source;
-
-                string outputPath = Path.Combine(outputFolder ?? Path.GetTempPath(), $"scan_{Guid.NewGuid()}.bmp");
-                using (var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
-                {
-                    byte[] dummy = new byte[128];
-                    await fs.WriteAsync(dummy);
-                }
-
-                return new ScanResult
-                {
-                    Success = true,
-                    OutputPath = outputPath
-                };
-            }
-            catch (Exception ex)
+            source.TransferError += (s, e) =>
             {
-                _logger.LogError(ex, "Error durante escaneo con TWAIN32");
-                return new ScanResult { Success = false, ErrorMessage = ex.Message };
-            }
-            finally
+                throw new Exception($"Error TWAIN: {e.ErrorCode}");
+            };
+
+            source.Acquire();
+            // Esperar hasta completar o cancelar
+            while (source.State != TwainState.Closed && !cancellationToken.IsCancellationRequested)
+                await Task.Delay(100, cancellationToken);
+
+            if (cancellationToken.IsCancellationRequested)
+                throw new OperationCanceledException("Escaneo cancelado.");
+
+            buffer.Seek(0, SeekOrigin.Begin);
+            await using var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
+            buffer.WriteTo(fs);
+
+            return new ScanResult
             {
-                _session?.Close();
-                _session?.Dispose();
-            }
+                ScanId = Guid.NewGuid().ToString(),
+                FilePath = outputPath,
+                Success = true
+            };
         }
     }
 }

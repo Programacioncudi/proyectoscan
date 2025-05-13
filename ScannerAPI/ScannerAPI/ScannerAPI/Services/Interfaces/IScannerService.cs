@@ -1,28 +1,19 @@
-// ScannerAPI/Interfaces/IScannerService.cs
-using System.Collections.Generic;
-using WIA;
+// File: Services/IScannerService.cs
+using System.Threading;
+using System.Threading.Tasks;
+using ScannerAPI.Models.Scanner;
 
-namespace ScannerAPI.Interfaces
+namespace ScannerAPI.Services
 {
+    /// <summary>
+    /// Lógica de negocio para operaciones de escaneo.
+    /// </summary>
     public interface IScannerService
     {
-        // Selección y configuración de dispositivo WIA 2.0
-        void SelectWIA2Device(string deviceId = null);
-        void ConfigureWIA2Scan(
-            int brightness = 0,
-            int contrast = 0,
-            int dpi = 300,
-            bool useADF = false,
-            bool duplex = false,
-            string colorMode = "Color",
-            string paperSize = "A4");
+        /// <summary>Ejecuta un escaneo con las opciones dadas.</summary>
+        Task<ScanResult> ScanAsync(ScanOptions options, CancellationToken cancellationToken);
 
-        // Operaciones de escaneo WIA 2.0
-        List<ImageFile> ScanWithWIA2(int pageCount = 1, string format = "jpeg");
-        Task<List<ImageFile>> ScanWithWIA2Async(int pageCount = 1, string format = "jpeg");
-
-        // Métodos comunes
-        List<string> GetAvailableWIA2Devices();
-        void SaveImages(List<ImageFile> images, string outputPath, string format = "jpeg");
+        /// <summary>Obtiene el resultado de un escaneo por ID.</summary>
+        Task<ScanResult> GetResultAsync(string scanId);
     }
 }

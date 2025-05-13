@@ -1,13 +1,27 @@
-namespace ScannerAPI.Models.Scanner;
+// File: Models/Scanner/ScanProgress.cs
+using System;
+using System.ComponentModel.DataAnnotations;
 
-public class ScanProgress
+namespace ScannerAPI.Models.Scanner
 {
-    public int Percentage { get; set; }
-    public string Message { get; set; }
-
-    public ScanProgress(int percentage, string message)
+    /// <summary>
+    /// Estado y progreso de un escaneo en curso.
+    /// </summary>
+    public class ScanProgress
     {
-        Percentage = percentage;
-        Message = message;
+        /// <summary>Identificador del escaneo.</summary>
+        [Required]
+        public string ScanId { get; set; }
+
+        /// <summary>Porcentaje completado (0–100).</summary>
+        [Range(0, 100)]
+        public int Percentage { get; set; }
+
+        /// <summary>Mensaje descriptivo del paso actual.</summary>
+        [MaxLength(500)]
+        public string Message { get; set; }
+
+        /// <summary>Marca de tiempo UTC de este evento de progreso.</summary>
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 }

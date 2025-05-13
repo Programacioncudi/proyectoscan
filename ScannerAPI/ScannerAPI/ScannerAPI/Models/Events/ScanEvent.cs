@@ -1,9 +1,34 @@
-namespace ScannerAPI.Models.Events;
+// File: Models/Events/ScanEvent.cs
+using System.ComponentModel.DataAnnotations;
 
-public class ScanEvent
+namespace ScannerAPI.Models.Events
 {
-    public string SessionId { get; set; }
-    public string Message { get; set; }
-    public int Progress { get; set; }
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    /// <summary>
+    /// Evento de estado de escaneo.
+    /// </summary>
+    public class ScanEvent
+    {
+        /// <summary>Identificador del escaneo.</summary>
+        [Required]
+        public string ScanId { get; set; }
+
+        /// <summary>Estado actual del escaneo.</summary>
+        [Required]
+        public ScanStatus Status { get; set; }
+    }
+
+    /// <summary>
+    /// Estados posibles de un escaneo.
+    /// </summary>
+    public enum ScanStatus
+    {
+        /// <summary>Escaneo iniciado.</summary>
+        Started,
+        /// <summary>Escaneo en progreso.</summary>
+        InProgress,
+        /// <summary>Escaneo completado exitosamente.</summary>
+        Completed,
+        /// <summary>Escaneo con error.</summary>
+        Error
+    }
 }

@@ -1,33 +1,46 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+// File: Middleware/ScannerAccessMiddleware.cs
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 
 namespace ScannerAPI.Middleware
 {
     /// <summary>
-    /// Middleware para validar acceso a escáneres según encabezados personalizados.
+    /// Middleware para verificar permiso "CanScan" en operaciones de escaneo.
     /// </summary>
     public class ScannerAccessMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly IAuthorizationService _authorization;
         private readonly ILogger<ScannerAccessMiddleware> _logger;
 
-        public ScannerAccessMiddleware(RequestDelegate next, ILogger<ScannerAccessMiddleware> logger)
+        public ScannerAccessMiddleware(
+            RequestDelegate next,
+            IAuthorizationService authorization,
+            ILogger<ScannerAccessMiddleware> logger)
         {
             _next = next;
+            _authorization = authorization;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Valida encabezados requeridos para acceder al escáner.
-        /// </summary>
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
-            if (!context.Request.Headers.ContainsKey("X-Scanner-Access"))
+            // Omitir autorización para endpoints anónimos
+            var endpoint = context.GetEndpoint();
+            if (endpoint?.Metadata.GetMetadata<IAllowAnonymous>() != null)
             {
-                _logger.LogWarning("Acceso al escáner denegado: falta encabezado X-Scanner-Access");
+                await _next(context);
+                return;
+            }
+
+            var authResult = await _authorization.AuthorizeAsync(context.User, null, "CanScan");
+            if (!authResult.Succeeded)
+            {
+                _logger.LogWarning("Acceso no autorizado al escaneo para usuario {User}", context.User?.Identity?.Name);
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                await context.Response.WriteAsync("Acceso al escáner denegado.");
+                await context.Response.WriteAsync("No tienes permiso para escanear.");
                 return;
             }
 

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Scanner Demo</title></head><body>
+<form id="scanForm">
+  <input id="deviceId" placeholder="Device ID" required />
+  <input id="dpi" type="number" value="300" />
+  <select id="format"><option>PDF</option><option>JPEG</option><option>PNG</option></select>
+  <label><input id="duplex" type="checkbox" /> Duplex</label>
+  <button>Scan</button>
+</form>
+<pre id="output"></pre>
+<script src="js/scanner-api.min.js"></script>
+<script src="scanner-demo/app.js"></script>
+</body></html>

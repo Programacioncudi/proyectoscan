@@ -1,12 +1,11 @@
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 
 namespace ScannerAPI.Security.Audit
 {
     /// <summary>
-    /// Middleware que registra información de auditoría de cada solicitud HTTP.
+    /// Middleware para auditar peticiones HTTP.
     /// </summary>
     public class AuditTrailMiddleware
     {
@@ -19,20 +18,12 @@ namespace ScannerAPI.Security.Audit
             _logger = logger;
         }
 
-        /// <summary>
-        /// Registra la información de la solicitud actual antes de continuar con la cadena.
-        /// </summary>
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
-            var username = context.User?.Identity?.Name ?? "Anónimo";
-            var path = context.Request.Path;
-            var method = context.Request.Method;
-            var time = DateTime.UtcNow;
-
-            _logger.LogInformation("Auditoría - Usuario: {User}, Método: {Method}, Ruta: {Path}, Hora: {Time}",
-                username, method, path, time);
-
+            var user = context.User.Identity?.Name ?? "Anónimo";
+            _logger.LogInformation("[AUDIT] {User} - {Method} {Path} - Inicia", user, context.Request.Method, context.Request.Path);
             await _next(context);
+            _logger.LogInformation("[AUDIT] {User} - {Method} {Path} - Fin {StatusCode}", user, context.Request.Method, context.Request.Path, context.Response.StatusCode);
         }
     }
 }

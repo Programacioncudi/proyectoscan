@@ -1,10 +1,11 @@
-using ScannerAPI.Models.Events;
+using System;
+using System.Threading.Tasks;
 
 namespace ScannerAPI.Services.Interfaces
 {
     public interface IEventBusService
     {
-        void PublishScanProgress(ScanProgress progress);
-        void SubscribeToScanEvents(Action<ScanProgress> handler);
+        Task PublishAsync<TEvent>(TEvent evt);
+        void Subscribe<TEvent>(Func<TEvent, Task> handler);
     }
 }

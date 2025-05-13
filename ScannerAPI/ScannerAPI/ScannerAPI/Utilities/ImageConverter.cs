@@ -5,37 +5,27 @@ using System.IO;
 namespace ScannerAPI.Utilities
 {
     /// <summary>
-    /// Utilidad para convertir imágenes entre formatos y flujos de datos.
+    /// Convierte y redimensiona imágenes en memoria.
     /// </summary>
     public static class ImageConverter
     {
-        /// <summary>
-        /// Convierte una imagen en un arreglo de bytes (por ejemplo para guardar en base de datos o generar PDF).
-        /// </summary>
-        public static byte[] ToByteArray(Image image, ImageFormat format)
+        public static byte[] ConvertFormat(byte[] data, ImageFormat format)
         {
-            using var ms = new MemoryStream();
-            image.Save(ms, format);
-            return ms.ToArray();
+            using var msIn = new MemoryStream(data);
+            using var img = Image.FromStream(msIn);
+            using var msOut = new MemoryStream();
+            img.Save(msOut, format);
+            return msOut.ToArray();
         }
 
-        /// <summary>
-        /// Carga una imagen desde un arreglo de bytes.
-        /// </summary>
-        public static Image FromByteArray(byte[] data)
+        public static byte[] Resize(byte[] data, int width, int height)
         {
-            using var ms = new MemoryStream(data);
-            return Image.FromStream(ms);
-        }
-
-        /// <summary>
-        /// Convierte una imagen a formato PNG.
-        /// </summary>
-        public static Image ConvertToPng(Image original)
-        {
-            using var ms = new MemoryStream();
-            original.Save(ms, ImageFormat.Png);
-            return Image.FromStream(new MemoryStream(ms.ToArray()));
+            using var msIn = new MemoryStream(data);
+            using var img = Image.FromStream(msIn);
+            using var thumb = new Bitmap(img, width, height);
+            using var msOut = new MemoryStream();
+            thumb.Save(msOut, img.RawFormat);
+            return msOut.ToArray();
         }
     }
 }

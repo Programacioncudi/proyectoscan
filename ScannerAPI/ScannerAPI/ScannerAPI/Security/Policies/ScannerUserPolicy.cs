@@ -2,27 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace ScannerAPI.Security.Policies
 {
-    /// <summary>
-    /// Requisito personalizado para validar el acceso como usuario de escáner.
-    /// </summary>
-    public class ScannerUserRequirement : IAuthorizationRequirement
+    public static class ScannerUserPolicy
     {
-        public string RequiredClaim { get; } = "ScannerAccess";
-    }
-
-    /// <summary>
-    /// Handler para aplicar la política ScannerUserRequirement.
-    /// </summary>
-    public class ScannerUserPolicy : AuthorizationHandler<ScannerUserRequirement>
-    {
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ScannerUserRequirement requirement)
+        public const string PolicyName = "ScannerUser";
+        public static void AddPolicy(AuthorizationOptions options)
         {
-            if (context.User.HasClaim(c => c.Type == requirement.RequiredClaim))
-            {
-                context.Succeed(requirement);
-            }
-
-            return Task.CompletedTask;
+            options.AddPolicy(PolicyName, policy =>
+                policy.RequireAssertion(ctx =>
+                    ctx.User.HasClaim(c => (c.Type == "role" && (c.Value == "USER" || c.Value == "ADMIN")) )));
         }
     }
 }

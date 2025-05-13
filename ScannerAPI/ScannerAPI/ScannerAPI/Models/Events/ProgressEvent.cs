@@ -1,30 +1,19 @@
+// File: Models/Events/ProgressEvent.cs
+using System.ComponentModel.DataAnnotations;
+
 namespace ScannerAPI.Models.Events
 {
     /// <summary>
-    /// Representa un evento de progreso emitido durante un proceso (como escaneo o carga).
+    /// Evento de progreso de escaneo.
     /// </summary>
     public class ProgressEvent
     {
-        /// <summary>
-        /// Porcentaje completado del proceso.
-        /// </summary>
-        public int Percentage { get; set; }
+        /// <summary>Identificador del escaneo.</summary>
+        [Required]
+        public string ScanId { get; set; }
 
-        /// <summary>
-        /// Mensaje opcional de estado.
-        /// </summary>
-        public string? StatusMessage { get; set; }
-
-        /// <summary>
-        /// Identificador opcional del proceso al que pertenece el progreso.
-        /// </summary>
-        public string? TaskId { get; set; }
-
-        public ProgressEvent(int percentage, string? statusMessage = null, string? taskId = null)
-        {
-            Percentage = percentage;
-            StatusMessage = statusMessage;
-            TaskId = taskId;
-        }
+        /// <summary>Porcentaje completado (0-100).</summary>
+        [Range(0, 100)]
+        public int Percent { get; set; }
     }
 }

@@ -1,67 +1,39 @@
-using ScannerAPI.Services.Interfaces;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
+using ScannerAPI.Services.Interfaces;
 
-namespace ScannerAPI.Utilities;
-
-/// <summary>
-/// Procesador de imágenes que permite formatear y comprimir imágenes escaneadas.
-/// </summary>
-public class ImageProcessor : IImageProcessor
+namespace ScannerAPI.Utilities
 {
     /// <summary>
-    /// Procesa una imagen a partir de datos binarios, aplicando formato y calidad.
+    /// Procesa imágenes: convierte formatos y ajusta dimensión.
     /// </summary>
-    /// <param name="imageData">Bytes de la imagen original</param>
-    /// <param name="format">Formato deseado (JPEG, PNG, etc.)</param>
-    /// <param name="quality">Calidad de compresión (0-100)</param>
-    /// <returns>Objeto con datos procesados de imagen</returns>
-    public Task<ProcessedImage> ProcessImageAsync(byte[] imageData, string format, int quality)
+    public class ImageProcessor : IImageProcessor
     {
-        using var ms = new MemoryStream(imageData);
-        using var image = Image.FromStream(ms);
-        
-        using var outputMs = new MemoryStream();
-        var imageFormat = GetImageFormat(format);
-        var codec = GetImageCodecInfo(imageFormat);
-
-        if (codec == null)
+        public Task<byte[]> ConvertToFormatAsync(byte[] imageData, FileFormat format)
         {
-            throw new InvalidDataException($"Codec no disponible para formato: {format}");
+            using var msIn = new MemoryStream(imageData);
+            using var img = Image.FromStream(msIn);
+            using var msOut = new MemoryStream();
+            img.Save(msOut, format switch
+            {
+                FileFormat.JPEG => ImageFormat.Jpeg,
+                FileFormat.PNG => ImageFormat.Png,
+                FileFormat.BMP => ImageFormat.Bmp,
+                _ => ImageFormat.Png
+            });
+            return Task.FromResult(msOut.ToArray());
         }
 
-        var encoderParams = new EncoderParameters(1);
-        encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, quality);
-
-        image.Save(outputMs, codec, encoderParams);
-
-        return Task.FromResult(new ProcessedImage
+        public Task<byte[]> ResizeAsync(byte[] imageData, int width, int height)
         {
-            Data = outputMs.ToArray(),
-            Format = format,
-            Width = image.Width,
-            Height = image.Height
-        });
-    }
-
-    private ImageFormat GetImageFormat(string format)
-    {
-        return format.ToUpper() switch
-        {
-            "PNG" => ImageFormat.Png,
-            "GIF" => ImageFormat.Gif,
-            "BMP" => ImageFormat.Bmp,
-            "TIFF" => ImageFormat.Tiff,
-            _ => ImageFormat.Jpeg
-        };
-    }
-
-    private ImageCodecInfo? GetImageCodecInfo(ImageFormat format)
-    {
-        return ImageCodecInfo.GetImageEncoders()
-            .FirstOrDefault(codec => codec.FormatID == format.Guid);
+            using var msIn = new MemoryStream(imageData);
+            using var img = Image.FromStream(msIn);
+            using var thumb = new Bitmap(img, width, height);
+            using var msOut = new MemoryStream();
+            thumb.Save(msOut, img.RawFormat);
+            return Task.FromResult(msOut.ToArray());
+        }
     }
 }

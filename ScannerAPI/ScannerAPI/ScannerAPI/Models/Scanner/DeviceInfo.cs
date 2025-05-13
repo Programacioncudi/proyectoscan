@@ -1,37 +1,35 @@
-namespace ScannerAPI.Models.Scanner;
+// File: Models/Scanner/DeviceInfo.cs
+using System.ComponentModel.DataAnnotations;
 
-/// <summary>
-/// Información de un dispositivo escáner
-/// </summary>
-public class DeviceInfo
+namespace ScannerAPI.Models.Scanner
 {
     /// <summary>
-    /// Identificador único del dispositivo
+    /// Información completa de un dispositivo de escaneo.
     /// </summary>
-    public string Id { get; set; }
+    public class DeviceInfo
+    {
+        /// <summary>Identificador único del dispositivo.</summary>
+        [Required, MaxLength(100)]
+        public string Id { get; set; }
 
-    /// <summary>
-    /// Nombre descriptivo del dispositivo
-    /// </summary>
-    public string Name { get; set; }
+        /// <summary>Nombre descriptivo.</summary>
+        [Required, MaxLength(200)]
+        public string Name { get; set; }
 
-    /// <summary>
-    /// Indica si el dispositivo está conectado y disponible
-    /// </summary>
-    public bool IsConnected { get; set; }
+        /// <summary>Fabricante.</summary>
+        [MaxLength(100)]
+        public string Manufacturer { get; set; }
 
-    /// <summary>
-    /// Tipo de tecnología (WIA, TWAIN, etc.)
-    /// </summary>
-    public string Type { get; set; }
+        /// <summary>Modelo.</summary>
+        [MaxLength(100)]
+        public string Model { get; set; }
 
-    /// <summary>
-    /// Información adicional del fabricante
-    /// </summary>
-    public string Manufacturer { get; set; }
+        /// <summary>Número de serie.</summary>
+        [MaxLength(100)]
+        public string SerialNumber { get; set; }
 
-    /// <summary>
-    /// Modelo específico del dispositivo
-    /// </summary>
-    public string Model { get; set; }
+        /// <summary>Capacidades detalladas.</summary>
+        [Required]
+        public DeviceCapabilities Capabilities { get; set; }
+    }
 }

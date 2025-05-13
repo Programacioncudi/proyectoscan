@@ -1,12 +1,13 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+// File: Middleware/RequestLoggingMiddleware.cs
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace ScannerAPI.Middleware
 {
     /// <summary>
-    /// Middleware para registrar todas las solicitudes HTTP entrantes con su tiempo de ejecución.
+    /// Middleware para registrar petición, respuesta y duración.
     /// </summary>
     public class RequestLoggingMiddleware
     {
@@ -19,18 +20,16 @@ namespace ScannerAPI.Middleware
             _logger = logger;
         }
 
-        /// <summary>
-        /// Lógica del middleware que mide y registra cada solicitud.
-        /// </summary>
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
             var stopwatch = Stopwatch.StartNew();
-            
+            _logger.LogInformation("Request {Method} {Path} started", context.Request.Method, context.Request.Path);
+
             await _next(context);
-            
+
             stopwatch.Stop();
             _logger.LogInformation(
-                "Request {Method} {Url} => {StatusCode} in {Elapsed}ms",
+                "Request {Method} {Path} completed with status {StatusCode} in {Elapsed}ms",
                 context.Request.Method,
                 context.Request.Path,
                 context.Response.StatusCode,
@@ -38,3 +37,4 @@ namespace ScannerAPI.Middleware
         }
     }
 }
+

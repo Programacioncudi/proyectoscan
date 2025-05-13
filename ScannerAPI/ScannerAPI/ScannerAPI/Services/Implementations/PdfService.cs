@@ -1,42 +1,23 @@
-using PdfSharpCore.Pdf;
-using PdfSharpCore.Drawing;
-using ScannerAPI.Services.Interfaces;
-using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
 
 namespace ScannerAPI.Services.Implementations
 {
-    /// <summary>
-    /// Servicio que convierte imágenes escaneadas en un único archivo PDF.
-    /// </summary>
-    public class PdfService : IPdfService
+    public class PdfService
     {
-        /// <summary>
-        /// Genera un archivo PDF a partir de una lista de imágenes.
-        /// </summary>
-        /// <param name="images">Lista de imágenes en formato byte array</param>
-        /// <returns>PDF generado como array de bytes</returns>
-        public async Task<byte[]> GeneratePdfFromImagesAsync(List<byte[]> images)
+        public async Task<string> ExtractTextAsync(string path)
         {
-            using var document = new PdfDocument();
-
-            foreach (var imageBytes in images)
+            using var reader = new PdfReader(path);
+            using var pdf = new PdfDocument(reader);
+            var sb = new System.Text.StringBuilder();
+            for (int i = 1; i <= pdf.GetNumberOfPages(); i++)
             {
-                using var ms = new MemoryStream(imageBytes);
-                using var image = XImage.FromStream(() => ms);
-
-                var page = document.AddPage();
-                page.Width = image.PixelWidth;
-                page.Height = image.PixelHeight;
-
-                using var gfx = XGraphics.FromPdfPage(page);
-                gfx.DrawImage(image, 0, 0, page.Width, page.Height);
+                var strategy = new SimpleTextExtractionStrategy();
+                sb.AppendLine(PdfTextExtractor.GetTextFromPage(pdf.GetPage(i), strategy));
             }
-
-            using var output = new MemoryStream();
-            document.Save(output, false);
-            return await Task.FromResult(output.ToArray());
+            return await Task.FromResult(sb.ToString());
         }
     }
 }

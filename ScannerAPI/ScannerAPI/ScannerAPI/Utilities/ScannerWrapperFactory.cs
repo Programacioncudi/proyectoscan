@@ -1,15 +1,16 @@
+using System;
+using Microsoft.Extensions.DependencyInjection;
+
 namespace ScannerAPI.Utilities
 {
+    /// <summary>
+    /// Fabrica para resolver IScannerWrapper con DI.
+    /// </summary>
     public static class ScannerWrapperFactory
     {
-        public static IScannerWrapper Create(string type)
+        public static IScannerWrapper Create(IServiceProvider sp)
         {
-            return type.ToLower() switch
-            {
-                "wia"   => new WiaWrapper(),
-                "twain" => new TwainWrapper(),
-                _       => throw new ArgumentException($"Tipo de escáner desconocido: {type}")
-            };
+            return sp.GetRequiredService<IScannerWrapper>();
         }
     }
 }

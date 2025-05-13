@@ -1,0 +1,19 @@
+# Build artifacts
+bin/
+obj/
+
+# VS files
+.vs/
+
+# User-specific
+*.user
+*.suo
+
+# Logs
+*.log
+
+# Test result files
+TestResults/
+
+# Rider
+.idea/

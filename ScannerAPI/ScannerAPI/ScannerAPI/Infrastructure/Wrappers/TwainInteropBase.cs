@@ -1,19 +1,23 @@
-using ScannerAPI.Models.Scanner;
+// File: Infrastructure/Wrappers/TwainInteropBase.cs
+using System.Threading;
 using System.Threading.Tasks;
+using ScannerAPI.Models.Scanner;
 
 namespace ScannerAPI.Infrastructure.Wrappers
 {
     /// <summary>
-    /// Clase base abstracta para interoperabilidad con escáneres usando TWAIN.
+    /// Base para implementaciones TWAIN (32/64 bits).
     /// </summary>
     public abstract class TwainInteropBase : IScannerWrapper
     {
         /// <summary>
-        /// Realiza un escaneo usando TWAIN y devuelve el resultado.
+        /// Ejecuta el escaneo con las opciones dadas y guarda en outputPath.
         /// </summary>
-        /// <param name="options">Opciones del escaneo</param>
-        /// <param name="outputPath">Ruta donde guardar el archivo escaneado</param>
-        /// <returns>Resultado del escaneo</returns>
-        public abstract Task<ScanResult> ScanAsync(ScanOptions options, string outputPath);
+        public abstract Task<ScanResult> ScanAsync(ScanOptions options, string outputPath, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Indica si esta implementación soporta las opciones dadas.
+        /// </summary>
+        public abstract bool Supports(ScanOptions options);
     }
 }

@@ -1,7 +1,21 @@
-namespace ScannerAPI.Models.Auth;
+// File: Models/Auth/LoginRequest.cs
+using System.ComponentModel.DataAnnotations;
 
-public class LoginRequest
+namespace ScannerAPI.Models.Auth
 {
-    public string Username { get; set; }
-    public string Password { get; set; }
+    /// <summary>
+    /// Credenciales para autenticarse.
+    /// </summary>
+    public class LoginRequest
+    {
+        /// <summary>Email del usuario.</summary>
+        [Required]
+        [EmailAddress]
+        public string Username { get; set; }
+
+        /// <summary>Contraseña del usuario (mínimo 8 caracteres).</summary>
+        [Required]
+        [MinLength(8)]
+        public string Password { get; set; }
+    }
 }

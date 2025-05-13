@@ -1,31 +1,26 @@
-using System.Collections.Generic;
 using WIA;
+using Microsoft.Extensions.Logging;
 
 namespace ScannerAPI.Services.Factories
 {
     /// <summary>
-    /// Fábrica para listar dispositivos escáner disponibles a través de WIA.
+    /// Fabrica para instanciar dispositivos WIA.
     /// </summary>
-    public class WiaDeviceFactory
+    public static class WiaDeviceFactory
     {
-        /// <summary>
-        /// Devuelve una lista con los nombres de los dispositivos escáner disponibles mediante WIA.
-        /// </summary>
-        public List<string> GetAvailableDevices()
+        public static DeviceManager CreateDeviceManager(ILogger logger)
         {
-            var deviceManager = new DeviceManager();
-            var result = new List<string>();
-
-            for (int i = 1; i <= deviceManager.DeviceInfos.Count; i++)
+            try
             {
-                DeviceInfo info = deviceManager.DeviceInfos[i];
-                if (info.Type == WiaDeviceType.ScannerDeviceType)
-                {
-                    result.Add(info.Properties["Name"].get_Value().ToString());
-                }
+                var dm = new DeviceManager();
+                logger.LogInformation("WIA DeviceManager creado.");
+                return dm;
             }
-
-            return result;
+            catch (COMException ex)
+            {
+                logger.LogError(ex, "No se pudo inicializar WIA DeviceManager.");
+                throw;
+            }
         }
     }
 }

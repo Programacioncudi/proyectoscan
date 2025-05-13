@@ -1,6 +1,45 @@
-@ScannerAPI_HostAddress = http://localhost:5064
+### File: ScannerAPI.http
+@baseUrl = http://localhost:5000
+@jwtToken =
 
-GET {{ScannerAPI_HostAddress}}/weatherforecast/
-Accept: application/json
+### Health check
+GET {{baseUrl}}/health
 
-###
+### Register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "user@example.com",
+  "password": "P@ssw0rd!"
+}
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "user@example.com",
+  "password": "P@ssw0rd!"
+}
+### Scan document
+POST {{baseUrl}}/api/scanner/scan
+Authorization: Bearer {{jwtToken}}
+Content-Type: application/json
+
+{
+  "deviceId": "Scanner123",
+  "dpi": 300,
+  "format": "PDF",
+  "duplex": true
+}
+// File: appsettings.json
+{
+  "Logging": { /*…*/ },
+  "AllowedHosts": "*",
+  "ConnectionStrings": { "DefaultConnection": "Server=.;Database=ScannerDb;Trusted_Connection=True;" },
+  "Jwt": { /*…*/ },
+  "ScannerConfig": { /*…*/ },
+  "Storage": { /*…*/ },
+  "RateLimiting": { /*…*/ }
+}

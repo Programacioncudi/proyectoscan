@@ -1,29 +1,17 @@
 using System;
-using System.IO;
 
 namespace ScannerAPI.Utilities
 {
     /// <summary>
-    /// Utilidad para generar nombres únicos de archivos escaneados.
+    /// Genera nombres de documentos basados en timestamp y GUID.
     /// </summary>
     public static class DocumentNaming
     {
-        /// <summary>
-        /// Genera un nombre de archivo único basado en fecha y hora.
-        /// </summary>
-        public static string Generate(string prefix = "scan", string extension = ".pdf")
+        public static string GenerateName(string prefix, string extension)
         {
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmssfff");
-            return $"{prefix}_{timestamp}{extension}";
-        }
-
-        /// <summary>
-        /// Genera la ruta completa del archivo en un directorio dado.
-        /// </summary>
-        public static string GenerateFullPath(string directory, string prefix = "scan", string extension = ".pdf")
-        {
-            var fileName = Generate(prefix, extension);
-            return Path.Combine(directory, fileName);
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var id = Guid.NewGuid().ToString("N");
+            return $"{prefix}_{timestamp}_{id}{extension}";
         }
     }
 }

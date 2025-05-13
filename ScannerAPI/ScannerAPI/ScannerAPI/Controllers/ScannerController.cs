@@ -1,71 +1,54 @@
-// Añadir al inicio del archivo
-using WIA2 = WIA; // Para claridad en el código que usaremos WIA 2.0
-using System.Security;
+// File: Controllers/ScannerController.cs
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Threading;
+using System.Threading.Tasks;
+using ScannerAPI.Services;
+using ScannerAPI.Models.Api;
+using ScannerAPI.Models.Scanner;
 
-public class ScannerController : IDisposable
+namespace ScannerAPI.Controllers
 {
-    private WIA2.DeviceManager _wiaManager;
-    private bool _disposed = false;
-    
-    // Constructor seguro
-    public ScannerController()
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class ScannerController : ControllerBase
     {
-        try
+        private readonly IScannerService _scannerService;
+
+        public ScannerController(IScannerService scannerService)
         {
-            _wiaManager = new WIA2.DeviceManagerClass(); // Usando WIA 2.0 explícitamente
+            _scannerService = scannerService;
         }
-        catch (COMException ex)
+
+        /// <summary>
+        /// Inicia un escaneo con las opciones especificadas.
+        /// </summary>
+        [HttpPost("scan")]
+        [ProducesResponseType(typeof(ApiResponse<ScanResult>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+        public async Task<IActionResult> Scan([FromBody] ScanOptions options, CancellationToken cancellationToken)
         {
-            throw new SecurityException("Error al acceder a WIA. Verifique permisos.", ex);
+            if (!ModelState.IsValid)
+                return BadRequest(new ApiResponse<object> { Success = false, Error = new ApiError { Code = "InvalidOptions", Message = "Opciones de escaneo inválidas." } });
+
+            var result = await _scannerService.ScanAsync(options, cancellationToken);
+            return Ok(new ApiResponse<ScanResult> { Success = true, Data = result });
+        }
+
+        /// <summary>
+        /// Obtiene el resultado de un escaneo por ID.
+        /// </summary>
+        [HttpGet("{scanId}")]
+        [ProducesResponseType(typeof(ApiResponse<ScanResult>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        public async Task<IActionResult> GetResult(string scanId)
+        {
+            var result = await _scannerService.GetResultAsync(scanId);
+            if (result == null)
+                return NotFound(new ApiResponse<object> { Success = false, Error = new ApiError { Code = "NotFound", Message = "Resultado no encontrado." } });
+
+            return Ok(new ApiResponse<ScanResult> { Success = true, Data = result });
         }
     }
-
-    // Método para listar dispositivos con validación
-    public IEnumerable<ScannerDevice> ListDevices()
-    {
-        if (_disposed) throw new ObjectDisposedException(nameof(ScannerController));
-        
-        try
-        {
-            return _wiaManager.DeviceInfos.Cast<WIA2.DeviceInfo>()
-                .Select(d => new ScannerDevice
-                {
-                    Id = d.DeviceID,
-                    Name = d.Properties["Name"].get_Value().ToString()
-                })
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            // Loggear el error adecuadamente
-            throw new ScannerException("Error al listar dispositivos", ex);
-        }
-    }
-
-    // Implementación IDisposable segura
-    public void Dispose()
-    {
-        if (_disposed) return;
-        
-        if (_wiaManager != null)
-        {
-            Marshal.ReleaseComObject(_wiaManager);
-            _wiaManager = null;
-        }
-        
-        _disposed = true;
-        GC.SuppressFinalize(this);
-    }
-
-    // Destructor por seguridad
-    ~ScannerController()
-    {
-        Dispose();
-    }
-}
-
-// Nueva clase de excepción específica
-public class ScannerException : Exception
-{
-    public ScannerException(string message, Exception inner) : base(message, inner) { }
 }

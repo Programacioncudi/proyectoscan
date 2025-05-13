@@ -1,32 +1,26 @@
-using PdfSharpCore.Pdf;
-using PdfSharpCore.Pdf.Security;
-using System.IO;
+using System.Text;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Encryption;
 
 namespace ScannerAPI.Security.Encryption
 {
-    /// <summary>
-    /// Servicio para encriptar archivos PDF con contraseña.
-    /// </summary>
     public class PdfPasswordManager
     {
-        /// <summary>
-        /// Aplica contraseña a un PDF existente y devuelve el resultado como byte array.
-        /// </summary>
-        public byte[] ApplyPassword(byte[] pdfBytes, string password)
+        public void EncryptPdf(string inputPath, string outputPath, string userPassword)
         {
-            using var input = new MemoryStream(pdfBytes);
-            var document = PdfReader.Open(input, PdfDocumentOpenMode.Modify);
+            var writer = new PdfWriter(outputPath, new WriterProperties()
+                .SetStandardEncryption(Encoding.UTF8.GetBytes(userPassword), null,
+                    EncryptionConstants.ALLOW_PRINTING, EncryptionConstants.ENCRYPTION_AES_128));
+            var pdf = new PdfDocument(new PdfReader(inputPath), writer);
+            pdf.Close();
+        }
 
-            var security = document.SecuritySettings;
-            security.UserPassword = password;
-            security.OwnerPassword = password;
-            security.PermitPrint = true;
-            security.PermitExtractContent = false;
-            security.PermitModifyDocument = false;
-
-            using var output = new MemoryStream();
-            document.Save(output, false);
-            return output.ToArray();
+        public void DecryptPdf(string inputPath, string outputPath, string userPassword)
+        {
+            var reader = new PdfReader(inputPath, new ReaderProperties().SetPassword(Encoding.UTF8.GetBytes(userPassword)));
+            var writer = new PdfWriter(outputPath);
+            var pdf = new PdfDocument(reader, writer);
+            pdf.Close();
         }
     }
 }

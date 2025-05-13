@@ -1,11 +1,12 @@
+// File: Middleware/SignalRConnectionMiddleware.cs
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 
 namespace ScannerAPI.Middleware
 {
     /// <summary>
-    /// Middleware que simula la verificación de conexión a SignalR.
+    /// Middleware para registrar conexiones y desconexiones de SignalR.
     /// </summary>
     public class SignalRConnectionMiddleware
     {
@@ -18,20 +19,22 @@ namespace ScannerAPI.Middleware
             _logger = logger;
         }
 
-        /// <summary>
-        /// Verifica que la solicitud contenga una conexión activa a SignalR.
-        /// </summary>
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
-            if (!context.Request.Headers.ContainsKey("X-SignalR-Connected"))
+            if (context.Request.Path.StartsWithSegments("/hubs"))
             {
-                _logger.LogWarning("Conexión SignalR no detectada");
-                context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsync("SignalR no conectado.");
-                return;
+                var connectionId = context.Connection.Id;
+                _logger.LogInformation("SignalR conexión iniciada: {ConnectionId}", connectionId);
+                context.Response.OnCompleted(() =>
+                {
+                    _logger.LogInformation("SignalR conexión terminada: {ConnectionId}", connectionId);
+                    return Task.CompletedTask;
+                });
             }
 
             await _next(context);
         }
     }
 }
+
+

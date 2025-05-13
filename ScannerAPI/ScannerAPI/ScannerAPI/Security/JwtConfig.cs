@@ -1,9 +1,16 @@
-namespace ScannerAPI.Security;
+using System.ComponentModel.DataAnnotations;
 
-public class JwtConfig
+namespace ScannerAPI.Security
 {
-    public string SecretKey { get; set; }
-    public string Issuer { get; set; }
-    public string Audience { get; set; }
-    public int ExpiryMinutes { get; set; }
+    public class JwtConfig
+    {
+        [Required]
+        public string SecretKey { get; set; }
+        [Required]
+        public string Issuer { get; set; }
+        [Required]
+        public string Audience { get; set; }
+        [Range(1, 1440)]
+        public int ExpiryMinutes { get; set; }
+    }
 }

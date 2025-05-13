@@ -1,9 +1,10 @@
-// ScannerAPI/Services/WIA2Constants.cs
 namespace ScannerAPI.Services
 {
+    /// <summary>
+    /// Identificadores y enums de WIA 2.0.
+    /// </summary>
     public static class WIA2PropertyIDs
     {
-        // Propiedades estándar de WIA 2.0
         public const int WIA_IPS_BRIGHTNESS = 6154;
         public const int WIA_IPS_CONTRAST = 6155;
         public const int WIA_IPS_CUR_INTENT = 6146;
@@ -15,15 +16,9 @@ namespace ScannerAPI.Services
         public const int WIA_IPS_PAGE_HEIGHT = 3098;
     }
 
-    public enum WIA2_DOCUMENT_HANDLING_SELECT
-    {
-        FLATBED = 0x0001,
-        FEEDER = 0x0002,
-        DUPLEX = 0x0004,
-        FRONT_FIRST = 0x0010,
-        BACK_FIRST = 0x0020
-    }
-
+    /// <summary>
+    /// Intents de color para WIA 2.0.
+    /// </summary>
     public enum WIA2_IPS_CUR_INTENT
     {
         COLOR = 1,
@@ -31,6 +26,9 @@ namespace ScannerAPI.Services
         TEXT = 4
     }
 
+    /// <summary>
+    /// Tamaños de página soportados en WIA 2.0.
+    /// </summary>
     public enum WIA2_PAGE_SIZE
     {
         A4 = 0,
