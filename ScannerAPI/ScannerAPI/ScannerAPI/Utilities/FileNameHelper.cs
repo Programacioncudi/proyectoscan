@@ -15,7 +15,8 @@ namespace ScannerAPI.Utilities
         public static string GenerateUniqueFileName(string extension)
         {
             var guid = Guid.NewGuid().ToString("N");
-            return $"{guid}{extension.StartsWith('.') ? extension : "." + extension}";
+            // Colocamos la expresión ternaria entre paréntesis
+            return $"{guid}{(extension.StartsWith('.') ? extension : "." + extension)}";
         }
 
         /// <summary>

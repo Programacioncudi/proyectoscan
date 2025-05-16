@@ -18,17 +18,26 @@ namespace ScannerAPI.Middleware
         private readonly RequestDelegate _next;
         private readonly JwtConfig _config;
 
+        /// <summary>
+        /// Inicializa una nueva instancia de <see cref="JwtMiddleware"/>.
+        /// </summary>
+        /// <param name="next">Delegado al siguiente middleware en la canalización.</param>
+        /// <param name="config">Configuración para validación de JWT.</param>
         public JwtMiddleware(RequestDelegate next, IOptions<JwtConfig> config)
         {
             _next = next;
             _config = config.Value;
         }
 
+        /// <summary>
+        /// Invoca el middleware, extrae y valida el token JWT si está presente.
+        /// </summary>
+        /// <param name="context">Contexto HTTP de la petición.</param>
         public async Task InvokeAsync(HttpContext context)
         {
             var token = context.Request.Headers["Authorization"]
                              .FirstOrDefault()?
-                             .Split(" ")
+                             .Split(' ')
                              .Last();
             if (token != null)
                 AttachUserToContext(context, token);
@@ -64,4 +73,3 @@ namespace ScannerAPI.Middleware
         }
     }
 }
-

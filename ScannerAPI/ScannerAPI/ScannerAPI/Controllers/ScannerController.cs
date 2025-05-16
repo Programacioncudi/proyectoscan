@@ -6,9 +6,13 @@ using System.Threading.Tasks;
 using ScannerAPI.Services;
 using ScannerAPI.Models.Api;
 using ScannerAPI.Models.Scanner;
+using ScannerAPI.Services.Interfaces;
 
 namespace ScannerAPI.Controllers
 {
+    /// <summary>
+    /// Controlador que expone los endpoints para gestionar operaciones de escaneo.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
@@ -16,6 +20,10 @@ namespace ScannerAPI.Controllers
     {
         private readonly IScannerService _scannerService;
 
+        /// <summary>
+        /// Constructor del controlador de escaneo.
+        /// </summary>
+        /// <param name="scannerService">Servicio de escaneo inyectado.</param>
         public ScannerController(IScannerService scannerService)
         {
             _scannerService = scannerService;
@@ -24,6 +32,9 @@ namespace ScannerAPI.Controllers
         /// <summary>
         /// Inicia un escaneo con las opciones especificadas.
         /// </summary>
+        /// <param name="options">Opciones de configuración del escaneo.</param>
+        /// <param name="cancellationToken">Token para cancelar la operación.</param>
+        /// <returns>Resultado del escaneo.</returns>
         [HttpPost("scan")]
         [ProducesResponseType(typeof(ApiResponse<ScanResult>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
@@ -37,8 +48,10 @@ namespace ScannerAPI.Controllers
         }
 
         /// <summary>
-        /// Obtiene el resultado de un escaneo por ID.
+        /// Obtiene el resultado de un escaneo por su identificador.
         /// </summary>
+        /// <param name="scanId">Identificador único del escaneo.</param>
+        /// <returns>Resultado del escaneo o error 404 si no existe.</returns>
         [HttpGet("{scanId}")]
         [ProducesResponseType(typeof(ApiResponse<ScanResult>), 200)]
         [ProducesResponseType(typeof(ApiResponse<object>), 404)]

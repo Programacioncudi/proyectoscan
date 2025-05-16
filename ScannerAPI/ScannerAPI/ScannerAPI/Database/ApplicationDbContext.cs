@@ -1,28 +1,40 @@
 // File: Database/ApplicationDbContext.cs
 using Microsoft.EntityFrameworkCore;
 using ScannerAPI.Models;
+using ScannerAPI.Models.Api;
 using ScannerAPI.Models.Auth;
 using ScannerAPI.Models.Scanner;
 
 namespace ScannerAPI.Database
 {
-    public class ApplicationDbContext : DbContext
+    /// <summary>
+    /// Contexto de base de datos de la aplicación, alberga los DbSet de las entidades.
+    /// </summary>
+    /// <remarks>
+    /// Inicializa una nueva instancia de <see cref="ApplicationDbContext"/> con las opciones especificadas.
+    /// </remarks>
+    /// <param name="options">Opciones de configuración del DbContext.</param>
+    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
-        {
-        }
 
-        // Entidades de dominio
+        /// <summary>Conjunto de usuarios registrados.</summary>
         public DbSet<User> Users { get; set; }
+        /// <summary>Conjunto de sesiones de escaneo.</summary>
         public DbSet<ScanSession> ScanSessions { get; set; }
+        /// <summary>Conjunto de registros de escaneos realizados.</summary>
         public DbSet<ScanRecord> ScanRecords { get; set; }
+        /// <summary>Conjunto de perfiles de escaneo predefinidos.</summary>
         public DbSet<ScanProfile> ScanProfiles { get; set; }
+        /// <summary>Conjunto de dispositivos disponibles.</summary>
         public DbSet<DeviceInfo> Devices { get; set; }
 
-        // Entidades generales
+        /// <summary>Conjunto de errores API almacenados.</summary>
         public DbSet<ApiError> ApiErrors { get; set; }
 
+        /// <summary>
+        /// Configura el modelo y las convenciones de entidades al construir el modelo.
+        /// </summary>
+        /// <param name="modelBuilder">Constructor del modelo.</param>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -41,10 +53,8 @@ namespace ScannerAPI.Database
                 entity.HasIndex(u => u.Email)
                       .IsUnique()
                       .HasDatabaseName("IX_Users_Email");
-                entity.HasMany(u => u.Roles)
-                      .WithOne()
-                      .HasForeignKey("UserId")
-                      .IsRequired();
+                // Roles es una colección de enum, se almacena como JSON o se ignora la configuración relacional.
+                entity.Ignore(u => u.Roles);
             });
 
             // --- ScanProfile ---
@@ -121,14 +131,7 @@ namespace ScannerAPI.Database
             });
 
             // --- Convenciones de nombres ---
-            foreach (var entity in modelBuilder.Model.GetEntityTypes())
-            {
-                // Nombres de columnas en snake_case si se desea
-                // entity.SetTableName(ToSnakeCase(entity.GetTableName()!));
-                // foreach (var prop in entity.GetProperties())
-                //     prop.SetColumnName(ToSnakeCase(prop.GetColumnName()!));
-            }
+            // Ejemplo: aplicar snake_case si se desea
         }
     }
 }
-

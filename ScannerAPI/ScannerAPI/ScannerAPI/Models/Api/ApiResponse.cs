@@ -14,10 +14,10 @@ namespace ScannerAPI.Models.Api
 
         /// <summary>Datos devueltos cuando Success es true.</summary>
         [JsonPropertyName("data")]
-        public T Data { get; set; }
+        public T Data { get; set; } = default!;
 
         /// <summary>Información de error cuando Success es false.</summary>
         [JsonPropertyName("error")]
-        public ApiError Error { get; set; }
+        public ApiError Error { get; set; } = new ApiError();
     }
 }

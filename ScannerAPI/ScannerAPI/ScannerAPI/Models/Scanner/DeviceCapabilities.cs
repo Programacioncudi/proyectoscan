@@ -1,7 +1,3 @@
-// File: Models/Scanner/DeviceCapabilities.cs
-using System.ComponentModel.DataAnnotations;
-
-// File: Models/Scanner/DeviceCapabilities.cs
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -12,6 +8,11 @@ namespace ScannerAPI.Models.Scanner
     /// </summary>
     public class DeviceCapabilities
     {
+        /// <summary>Llave.</summary>
+
+        [Key]
+        public Guid Id { get; set; }
+
         /// <summary>Resoluciones soportadas (DPI).</summary>
         [Required]
         public List<int> SupportedDpis { get; set; } = new();
@@ -49,21 +50,5 @@ namespace ScannerAPI.Models.Scanner
         /// <summary>Número máximo de hojas en alimentador.</summary>
         [Range(0, 100)]
         public int FeederCapacity { get; set; }
-    }
-
-    public enum ColorMode
-    {
-        BlackAndWhite,
-        Grayscale,
-        Color
-    }
-
-    public enum FileFormat
-    {
-        JPEG,
-        PNG,
-        PDF,
-        TIFF,
-        BMP
     }
 }

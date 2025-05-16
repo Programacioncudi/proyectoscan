@@ -11,7 +11,7 @@ namespace ScannerAPI.Models.Auth
     {
         /// <summary>Token JWT generado.</summary>
         [Required]
-        public string Token { get; set; }
+        public string Token { get; set; } = string.Empty;
 
         /// <summary>Fecha y hora de expiración UTC del token.</summary>
         public DateTime ExpiresAt { get; set; }

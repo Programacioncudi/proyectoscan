@@ -14,6 +14,12 @@ namespace ScannerAPI.RateLimiting
         private readonly RateLimitOptions _options;
         private readonly IRateLimitStore _store;
 
+        /// <summary>
+        /// Inicializa una nueva instancia de <see cref="RateLimitingMiddleware"/>.
+        /// </summary>
+        /// <param name="next">Delegate para el siguiente middleware en la canalización.</param>
+        /// <param name="options">Opciones de configuración de rate limiting.</param>
+        /// <param name="store">Almacén utilizado para contar peticiones por cliente.</param>
         public RateLimitingMiddleware(RequestDelegate next, IOptions<RateLimitOptions> options, IRateLimitStore store)
         {
             _next = next;
@@ -21,6 +27,10 @@ namespace ScannerAPI.RateLimiting
             _store = store;
         }
 
+        /// <summary>
+        /// Procesa la solicitud HTTP y aplica la limitación de tasa.
+        /// </summary>
+        /// <param name="context">Contexto de la solicitud HTTP.</param>
         public async Task InvokeAsync(HttpContext context)
         {
             var key = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";

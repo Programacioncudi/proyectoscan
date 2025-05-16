@@ -10,15 +10,15 @@ namespace ScannerAPI.Models.Config
     {
         /// <summary>Clave secreta usada para firmar tokens.</summary>
         [Required]
-        public string SecretKey { get; set; }
+        public string SecretKey { get; set; } = string.Empty;
 
         /// <summary>Emisor del token JWT.</summary>
         [Required]
-        public string Issuer { get; set; }
+        public string Issuer { get; set; } = string.Empty;
 
         /// <summary>Audiencia del token JWT.</summary>
         [Required]
-        public string Audience { get; set; }
+        public string Audience { get; set; } = string.Empty;
 
         /// <summary>Tiempo de expiración en minutos.</summary>
         [Range(1, 1440)]

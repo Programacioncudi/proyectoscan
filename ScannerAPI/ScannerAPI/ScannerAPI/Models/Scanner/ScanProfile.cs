@@ -16,7 +16,7 @@ namespace ScannerAPI.Models.Scanner
         /// <summary>Nombre descriptivo del perfil.</summary>
         [Required]
         [MaxLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>Resolución DPI del perfil.</summary>
         [Range(1, 10000)]

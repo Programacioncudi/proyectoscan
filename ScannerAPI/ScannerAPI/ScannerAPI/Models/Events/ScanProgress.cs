@@ -10,7 +10,7 @@ namespace ScannerAPI.Models.Events
     {
         /// <summary>Identificador del escaneo.</summary>
         [Required]
-        public string ScanId { get; set; }
+        public required Guid ScanId { get; set; } 
 
         /// <summary>Porcentaje completado (0-100).</summary>
         [Range(0, 100)]

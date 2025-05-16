@@ -1,13 +1,16 @@
+// File: Utilities/BitnessHelper.cs
 using System;
 
 namespace ScannerAPI.Utilities
 {
     /// <summary>
-    /// Ayuda a detectar la arquitectura de proceso y sistema.
+    /// Provee información sobre la arquitectura (32/64-bit) de la aplicación.
     /// </summary>
-    public static class BitnessHelper
+    public class BitnessHelper
     {
-        public static bool Is64BitProcess => Environment.Is64BitProcess;
-        public static bool Is64BitOperatingSystem => Environment.Is64BitOperatingSystem;
+        /// <summary>
+        /// Indica si el proceso está corriendo en 64-bit.
+        /// </summary>
+        public bool Is64Bit => IntPtr.Size == 8;
     }
 }

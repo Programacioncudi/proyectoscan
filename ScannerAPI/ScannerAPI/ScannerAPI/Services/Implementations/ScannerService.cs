@@ -1,189 +1,112 @@
-// ScannerAPI/Services/ScannerService.cs
 using System;
-using System.Collections.Generic;
-using WIA;
-using ScannerAPI.Interfaces;
-using Microsoft.Extensions.Logging;
-using WIA2 = WIA; // Especificamos que usamos WIA 2.0
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using ScannerAPI.Database;
+using ScannerAPI.Exceptions;
+using ScannerAPI.Hubs;
+using ScannerAPI.Infrastructure.Storage;
+using ScannerAPI.Infrastructure.Wrappers;
+using ScannerAPI.Models.Scanner;
+using ScannerAPI.Services.Interfaces;
 
-namespace ScannerAPI.Services
+namespace ScannerAPI.Services.Implementations
 {
-    public partial class ScannerService : IScannerService
+    /// <inheritdoc/>
+    /// <summary>
+    /// Crea una instancia de <see cref="ScannerService"/>.
+    /// </summary>
+    /// <param name="wrappers">Colección de wrappers de escáner disponibles.</param>
+    /// <param name="storage">Servicio de almacenamiento de archivos.</param>
+    /// <param name="context">Contexto de base de datos.</param>
+    /// <param name="hubContext">Contexto de SignalR para notificaciones.</param>
+    public class ScannerService(
+        IEnumerable<IScannerWrapper> wrappers,
+        IStorageService storage,
+        ApplicationDbContext context,
+        IHubContext<ScannerHub> hubContext) : IScannerService
     {
-        private WIA2.DeviceManager _wia2DeviceManager;
-        private WIA2.Device _wia2Device;
-        private readonly ILogger<ScannerService> _logger;
+        private readonly IEnumerable<IScannerWrapper> _wrappers = wrappers ?? throw new ArgumentNullException(nameof(wrappers));
+        private readonly IStorageService _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+        private readonly ApplicationDbContext _context = context ?? throw new ArgumentNullException(nameof(context));
+        private readonly IHubContext<ScannerHub> _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
 
-        public ScannerService(ILogger<ScannerService> logger)
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Lanza <see cref="DomainException"/> si no hay un wrapper compatible.
+        /// </remarks>
+        public async Task<ScanResult> ScanAsync(ScanOptions options, CancellationToken cancellationToken)
         {
-            _logger = logger;
-            InitializeWIA2();
-        }
+            var wrapper = _wrappers.FirstOrDefault(w => w.Supports(options))
+                          ?? throw new DomainException("NoScanner", "No se encontró un escáner compatible.");
 
-        private void InitializeWIA2()
-        {
-            try
+            var fileName = $"{Guid.NewGuid()}.{options.Format}".ToLowerInvariant();
+            var tempPath = Path.Combine(Path.GetTempPath(), fileName);
+
+            var result = await wrapper.ScanAsync(options, tempPath, cancellationToken);
+            var bytes = await File.ReadAllBytesAsync(tempPath, cancellationToken);
+            var finalPath = await _storage.SaveFileAsync(fileName, bytes);
+
+            var record = new ScanRecord
             {
-                _wia2DeviceManager = new WIA2.DeviceManager();
-                _logger.LogInformation("WIA 2.0 inicializado correctamente");
-            }
-            catch (COMException ex)
+                Id = Guid.NewGuid(),
+                ScanId = result.ScanId,
+                FilePath = finalPath,
+                Success = result.Success,
+                ErrorMessage = result.ErrorMessage,
+                SessionId = Guid.Empty
+            };
+
+            _context.ScanRecords.Add(record);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            await _hubContext.Clients
+                .Group(options.DeviceId)
+                .SendAsync("ScanCompleted", result.ScanId, finalPath, cancellationToken);
+
+            return new ScanResult
             {
-                _logger.LogError(ex, "Error al inicializar WIA 2.0");
-                throw new ScannerException("No se pudo inicializar WIA 2.0. Asegúrese que está instalado.", ex);
-            }
-        }
-
-        public void SelectWIA2Device(string deviceId = null)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(deviceId))
-                {
-                    // Seleccionar el primer dispositivo por defecto
-                    _wia2Device = _wia2DeviceManager.DeviceInfos[1].Connect();
-                }
-                else
-                {
-                    foreach (WIA2.DeviceInfo deviceInfo in _wia2DeviceManager.DeviceInfos)
-                    {
-                        if (deviceInfo.DeviceID == deviceId)
-                        {
-                            _wia2Device = deviceInfo.Connect();
-                            break;
-                        }
-                    }
-                }
-
-                if (_wia2Device == null)
-                    throw new ScannerException("Dispositivo WIA 2.0 no encontrado");
-
-                _logger.LogInformation($"Dispositivo WIA 2.0 seleccionado: {_wia2Device.DeviceID}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al seleccionar dispositivo WIA 2.0");
-                throw;
-            }
-        }
-
-        public void ConfigureWIA2Scan(
-            int brightness = 0,
-            int contrast = 0,
-            int dpi = 300,
-            bool useADF = false,
-            bool duplex = false,
-            string colorMode = "Color",
-            string paperSize = "A4")
-        {
-            try
-            {
-                if (_wia2Device == null)
-                    SelectWIA2Device();
-
-                var item = _wia2Device.Items[1];
-
-                // Configuración avanzada específica de WIA 2.0
-                SetWIA2Property(item.Properties, WIA2PropertyIDs.WIA_IPS_BRIGHTNESS, brightness);
-                SetWIA2Property(item.Properties, WIA2PropertyIDs.WIA_IPS_CONTRAST, contrast);
-                SetWIA2Property(item.Properties, WIA2PropertyIDs.WIA_IPS_XRES, dpi);
-                SetWIA2Property(item.Properties, WIA2PropertyIDs.WIA_IPS_YRES, dpi);
-
-                // Configuración de manejo de documentos (ADF/Duplex)
-                int handling = (int)WIA2_DOCUMENT_HANDLING_SELECT.FLATBED;
-                if (useADF) handling |= (int)WIA2_DOCUMENT_HANDLING_SELECT.FEEDER;
-                if (duplex) handling |= (int)WIA2_DOCUMENT_HANDLING_SELECT.DUPLEX;
-                SetWIA2Property(item.Properties, WIA2PropertyIDs.WIA_IPS_DOCUMENT_HANDLING_SELECT, handling);
-
-                // Configuración de color
-                int intent = colorMode.ToLower() switch
-                {
-                    "grayscale" => (int)WIA2_IPS_CUR_INTENT.GRAYSCALE,
-                    "blackandwhite" => (int)WIA2_IPS_CUR_INTENT.TEXT,
-                    _ => (int)WIA2_IPS_CUR_INTENT.COLOR
-                };
-                SetWIA2Property(item.Properties, WIA2PropertyIDs.WIA_IPS_CUR_INTENT, intent);
-
-                // Configuración de tamaño de papel (solo para ADF)
-                if (useADF)
-                {
-                    SetWIA2Property(item.Properties, WIA2PropertyIDs.WIA_IPS_PAGE_SIZE, 
-                        (int)GetWIA2PageSize(paperSize));
-                }
-
-                _logger.LogInformation("Configuración WIA 2.0 aplicada correctamente");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al configurar WIA 2.0");
-                throw;
-            }
-        }
-
-        private WIA2_PAGE_SIZE GetWIA2PageSize(string paperSize)
-        {
-            return paperSize.ToUpper() switch
-            {
-                "A4" => WIA2_PAGE_SIZE.A4,
-                "LETTER" => WIA2_PAGE_SIZE.LETTER,
-                "LEGAL" => WIA2_PAGE_SIZE.LEGAL,
-                _ => WIA2_PAGE_SIZE.A4
+                ScanId = result.ScanId,
+                FilePath = finalPath,
+                Success = true
             };
         }
 
-        private void SetWIA2Property(WIA2.IProperties properties, int propertyId, object value)
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Devuelve <c>null</c> si no se encuentra el registro.
+        /// </remarks>
+        public async Task<ScanResult?> GetResultAsync(string scanId)
         {
-            try
+            var record = await _context.ScanRecords
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.ScanId == scanId);
+
+            if (record == null)
+                return null;
+
+            return new ScanResult
             {
-                WIA2.Property property = properties.get_Item(ref propertyId);
-                property.set_Value(ref value);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"No se pudo establecer la propiedad WIA 2.0 {propertyId}: {ex.Message}");
-                throw new ScannerException($"Error de configuración WIA 2.0: {ex.Message}", ex);
-            }
+                ScanId = record.ScanId,
+                FilePath = record.FilePath,
+                Success = record.Success,
+                ErrorMessage = record.ErrorMessage
+            };
         }
 
-        public List<WIA2.ImageFile> ScanWithWIA2(int pageCount = 1, string format = "jpeg")
+        /// <inheritdoc/>
+        /// <summary>
+        /// Determina si al menos un escáner está disponible para escanear.
+        /// </summary>
+        /// <param name="cancellationToken">Token para cancelar la comprobación.</param>
+        /// <returns><c>true</c> si hay al menos un wrapper disponible; de lo contrario, <c>false</c>.</returns>
+        public Task<bool> IsScannerAvailableAsync(CancellationToken cancellationToken)
         {
-            var images = new List<WIA2.ImageFile>();
-            try
-            {
-                if (_wia2Device == null)
-                    SelectWIA2Device();
-
-                var item = _wia2Device.Items[1];
-                string wiaFormat = format.ToLower() switch
-                {
-                    "png" => FormatID.wiaFormatPNG,
-                    "tiff" => FormatID.wiaFormatTIFF,
-                    "bmp" => FormatID.wiaFormatBMP,
-                    _ => FormatID.wiaFormatJPEG
-                };
-
-                for (int i = 0; i < pageCount; i++)
-                {
-                    try
-                    {
-                        var image = (WIA2.ImageFile)item.Transfer(wiaFormat);
-                        images.Add(image);
-                        _logger.LogInformation($"Página {i + 1} escaneada correctamente");
-                    }
-                    catch (COMException ex) when (ex.ErrorCode == unchecked((int)0x80210006))
-                    {
-                        _logger.LogInformation("No hay más páginas en el alimentador");
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error durante el escaneo WIA 2.0");
-                throw;
-            }
-
-            return images;
+            bool available = _wrappers.Any(w => w.Supports(default!));
+            return Task.FromResult(available);
         }
     }
 }

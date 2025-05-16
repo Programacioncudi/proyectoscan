@@ -10,9 +10,15 @@ namespace ScannerAPI.Models.Auth
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum UserRole
     {
+        /// <summary>
+        /// Administrador con permisos completos.
+        /// </summary>
         [EnumMember(Value = "ADMIN")]
         Admin,
 
+        /// <summary>
+        /// Usuario estándar con permisos limitados.
+        /// </summary>
         [EnumMember(Value = "USER")]
         User
     }

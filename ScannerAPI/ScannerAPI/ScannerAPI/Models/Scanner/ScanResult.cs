@@ -11,19 +11,18 @@ namespace ScannerAPI.Models.Scanner
     {
         /// <summary>Identificador del escaneo.</summary>
         [Required]
-        public string ScanId { get; set; }
+        public string ScanId { get; set; } = string.Empty;
 
         /// <summary>Ruta del archivo generado.</summary>
         [Required]
         [MaxLength(500)]
-        public string FilePath { get; set; }
+        public string FilePath { get; set; } = string.Empty;
 
         /// <summary>Indica si fue exitoso.</summary>
         public bool Success { get; set; }
 
         /// <summary>Mensaje de error en caso de fallo.</summary>
         [MaxLength(1000)]
-        public string ErrorMessage { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
     }
 }
-

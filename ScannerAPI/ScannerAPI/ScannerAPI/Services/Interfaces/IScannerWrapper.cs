@@ -1,4 +1,5 @@
 using ScannerAPI.Models.Scanner;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ScannerAPI.Services.Interfaces
@@ -9,8 +10,19 @@ namespace ScannerAPI.Services.Interfaces
     public interface IScannerWrapper
     {
         /// <summary>
-        /// Realiza un escaneo con las opciones especificadas y guarda en el destino indicado.
+        /// Indica si este wrapper soporta las opciones dadas (TWAIN vs WIA).
         /// </summary>
-        Task<ScanResult> ScanAsync(ScanOptions options, string outputPath);
+        bool Supports(ScanOptions options);
+
+        /// <summary>
+        /// Realiza un escaneo con las opciones especificadas, guarda en la ruta indicada
+        /// y respeta la cancelación.
+        /// </summary>
+        Task<ScanResult> ScanAsync(
+            ScanOptions options,
+            string outputPath,
+            CancellationToken cancellationToken
+        );
     }
 }
+

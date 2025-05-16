@@ -15,7 +15,7 @@ namespace ScannerAPI.Models.Scanner
 
         /// <summary>Identificador del escaneo asociado.</summary>
         [Required]
-        public string ScanId { get; set; }
+        public string ScanId { get; set; } = string.Empty;
 
         /// <summary>Fecha y hora UTC de inicio.</summary>
         [Required]
@@ -26,10 +26,18 @@ namespace ScannerAPI.Models.Scanner
 
         /// <summary>Identificador del dispositivo utilizado.</summary>
         [Required]
-        public string DeviceId { get; set; }
+        public string DeviceId { get; set; } = string.Empty;
 
         /// <summary>Identificador del usuario que inicia la sesión.</summary>
         [Required]
         public Guid UserId { get; set; }
+        /// <summary>
+        /// Nombre de usuario que inició la sesión.
+        /// </summary>
+        [Required]
+        public string UserName { get; set; } = string.Empty;
+        
+
+
     }
 }

@@ -10,26 +10,26 @@ namespace ScannerAPI.Models.Scanner
     {
         /// <summary>Identificador único del dispositivo.</summary>
         [Required, MaxLength(100)]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
         /// <summary>Nombre descriptivo.</summary>
         [Required, MaxLength(200)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>Fabricante.</summary>
         [MaxLength(100)]
-        public string Manufacturer { get; set; }
+        public string Manufacturer { get; set; } = string.Empty;
 
         /// <summary>Modelo.</summary>
         [MaxLength(100)]
-        public string Model { get; set; }
+        public string Model { get; set; } = string.Empty;
 
         /// <summary>Número de serie.</summary>
         [MaxLength(100)]
-        public string SerialNumber { get; set; }
+        public string SerialNumber { get; set; } = string.Empty;
 
         /// <summary>Capacidades detalladas.</summary>
         [Required]
-        public DeviceCapabilities Capabilities { get; set; }
+        public DeviceCapabilities Capabilities { get; set; } = new DeviceCapabilities();
     }
 }

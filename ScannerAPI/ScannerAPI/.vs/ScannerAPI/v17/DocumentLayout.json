@@ -1,18 +1,14 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Projects\\ScannerAPI\\",
+  "WorkspaceRootPath": "C:\\Users\\foxtrot\\Desktop\\proyectoscan-main\\ScannerAPI\\ScannerAPI\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{0FB7F6C0-2D52-442C-BE9D-EFC83A108F54}|ScannerAPI\\ScannerAPI.csproj|c:\\projects\\scannerapi\\scannerapi\\utilities\\wiawrapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB7F6C0-2D52-442C-BE9D-EFC83A108F54}|ScannerAPI\\ScannerAPI.csproj|solutionrelative:scannerapi\\utilities\\wiawrapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB7F6C0-2D52-442C-BE9D-EFC83A108F54}|ScannerAPI\\ScannerAPI.csproj|c:\\users\\foxtrot\\desktop\\proyectoscan-main\\scannerapi\\scannerapi\\scannerapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB7F6C0-2D52-442C-BE9D-EFC83A108F54}|ScannerAPI\\ScannerAPI.csproj|solutionrelative:scannerapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0FB7F6C0-2D52-442C-BE9D-EFC83A108F54}|ScannerAPI\\ScannerAPI.csproj|c:\\projects\\scannerapi\\scannerapi\\services\\implementations\\scannerservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB7F6C0-2D52-442C-BE9D-EFC83A108F54}|ScannerAPI\\ScannerAPI.csproj|solutionrelative:scannerapi\\services\\implementations\\scannerservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0FB7F6C0-2D52-442C-BE9D-EFC83A108F54}|ScannerAPI\\ScannerAPI.csproj|c:\\projects\\scannerapi\\scannerapi\\infrastructure\\wrappers\\wiainterop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0FB7F6C0-2D52-442C-BE9D-EFC83A108F54}|ScannerAPI\\ScannerAPI.csproj|solutionrelative:scannerapi\\infrastructure\\wrappers\\wiainterop.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{0FB7F6C0-2D52-442C-BE9D-EFC83A108F54}|ScannerAPI\\ScannerAPI.csproj|c:\\users\\foxtrot\\desktop\\proyectoscan-main\\scannerapi\\scannerapi\\scannerapi\\database\\databaseinitializer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0FB7F6C0-2D52-442C-BE9D-EFC83A108F54}|ScannerAPI\\ScannerAPI.csproj|solutionrelative:scannerapi\\database\\databaseinitializer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,50 +18,15 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
             },
             {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "WiaWrapper.cs",
-              "DocumentMoniker": "C:\\Projects\\ScannerAPI\\ScannerAPI\\Utilities\\WiaWrapper.cs",
-              "RelativeDocumentMoniker": "ScannerAPI\\Utilities\\WiaWrapper.cs",
-              "ToolTip": "C:\\Projects\\ScannerAPI\\ScannerAPI\\Utilities\\WiaWrapper.cs",
-              "RelativeToolTip": "ScannerAPI\\Utilities\\WiaWrapper.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-09T20:08:57.717Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ScannerService.cs",
-              "DocumentMoniker": "C:\\Projects\\ScannerAPI\\ScannerAPI\\Services\\Implementations\\ScannerService.cs",
-              "RelativeDocumentMoniker": "ScannerAPI\\Services\\Implementations\\ScannerService.cs",
-              "ToolTip": "C:\\Projects\\ScannerAPI\\ScannerAPI\\Services\\Implementations\\ScannerService.cs",
-              "RelativeToolTip": "ScannerAPI\\Services\\Implementations\\ScannerService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAEAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-09T20:08:27.401Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "WiaInterop.cs",
-              "DocumentMoniker": "C:\\Projects\\ScannerAPI\\ScannerAPI\\Infrastructure\\Wrappers\\WiaInterop.cs",
-              "RelativeDocumentMoniker": "ScannerAPI\\Infrastructure\\Wrappers\\WiaInterop.cs",
-              "ToolTip": "C:\\Projects\\ScannerAPI\\ScannerAPI\\Infrastructure\\Wrappers\\WiaInterop.cs",
-              "RelativeToolTip": "ScannerAPI\\Infrastructure\\Wrappers\\WiaInterop.cs",
-              "ViewState": "AgIAAIMAAAAAAAAAAAAAwAoAAAAOAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-09T20:07:22.108Z",
-              "EditorCaption": ""
+              "$type": "Bookmark",
+              "Name": "ST:2:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
             },
             {
               "$type": "Bookmark",
@@ -76,12 +37,30 @@
               "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DatabaseInitializer.cs",
+              "DocumentMoniker": "C:\\Users\\foxtrot\\Desktop\\proyectoscan-main\\ScannerAPI\\ScannerAPI\\ScannerAPI\\Database\\DatabaseInitializer.cs",
+              "RelativeDocumentMoniker": "ScannerAPI\\Database\\DatabaseInitializer.cs",
+              "ToolTip": "C:\\Users\\foxtrot\\Desktop\\proyectoscan-main\\ScannerAPI\\ScannerAPI\\ScannerAPI\\Database\\DatabaseInitializer.cs",
+              "RelativeToolTip": "ScannerAPI\\Database\\DatabaseInitializer.cs",
+              "ViewState": "AgIAABcAAAAAAAAAAAA+wD0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-16T15:07:08.882Z",
+              "EditorCaption": ""
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:2:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\foxtrot\\Desktop\\proyectoscan-main\\ScannerAPI\\ScannerAPI\\ScannerAPI\\Program.cs",
+              "RelativeDocumentMoniker": "ScannerAPI\\Program.cs",
+              "ToolTip": "C:\\Users\\foxtrot\\Desktop\\proyectoscan-main\\ScannerAPI\\ScannerAPI\\ScannerAPI\\Program.cs",
+              "RelativeToolTip": "ScannerAPI\\Program.cs",
+              "ViewState": "AgIAAIcAAAAAAAAAAAAYwIsAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-16T01:04:42.099Z",
+              "EditorCaption": ""
             }
           ]
         }

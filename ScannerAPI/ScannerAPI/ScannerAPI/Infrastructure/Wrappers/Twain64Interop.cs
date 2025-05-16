@@ -1,63 +1,42 @@
-using Microsoft.Extensions.Logging;
-using NTwain;
+
+// File: Infrastructure/Wrappers/Twain64Interop.cs
+
 using ScannerAPI.Models.Scanner;
 using ScannerAPI.Utilities;
-using ScannerAPI.Services.Interfaces;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ScannerAPI.Infrastructure.Wrappers
 {
     /// <summary>
-    /// Implementación de escaneo TWAIN 64-bit usando NTwain.
+    /// Stub de implementación de TWAIN 64-bit.
     /// </summary>
     public class Twain64Interop : TwainInteropBase
     {
+        /// <summary>
+        /// Crea una instancia de <see cref="Twain64Interop"/>.
+        /// </summary>
         public Twain64Interop(ILogger<Twain64Interop> logger, BitnessHelper bitnessHelper, ITwainConfig twainConfig)
             : base(logger, bitnessHelper, twainConfig)
         {
         }
 
-        public override async Task<ScanResult> ScanAsync(ScanOptions options, string? outputFolder)
+        /// <inheritdoc />
+        public override bool Supports(ScanOptions options)
         {
-            try
+            return options.DeviceType == DeviceType.Twain;
+        }
+
+        /// <inheritdoc />
+        public override async Task<ScanResult> ScanAsync(ScanOptions options, string outputPath, CancellationToken cancellationToken)
+        {
+            // Stub: crear un archivo vacío como resultado de escaneo
+            var bytes = Array.Empty<byte>();
+            await File.WriteAllBytesAsync(outputPath, bytes, cancellationToken);
+            return new ScanResult
             {
-                _session = new TWainSession(TWIdentity.CreateFromAssembly(DataGroups.Image, _bitnessHelper.Is64Bit));
-                _session.Open();
-                ConfigureSource(_session, options);
-
-                var source = _session.GetSources().FirstOrDefault(s => s.ProductName == options.DeviceId);
-                if (source == null)
-                    throw new Exception($"Escáner TWAIN no encontrado: {options.DeviceId}");
-
-                _session.CurrentSource = source;
-
-                // Aquí se simula la transferencia: en un sistema real se conecta a eventos NTwain.
-                string outputPath = Path.Combine(outputFolder ?? Path.GetTempPath(), $"scan_{Guid.NewGuid()}.bmp");
-                using (var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
-                {
-                    byte[] dummy = new byte[128];
-                    await fs.WriteAsync(dummy);
-                }
-
-                return new ScanResult
-                {
-                    Success = true,
-                    OutputPath = outputPath
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error durante escaneo con TWAIN64");
-                return new ScanResult { Success = false, ErrorMessage = ex.Message };
-            }
-            finally
-            {
-                _session?.Close();
-                _session?.Dispose();
-            }
+                ScanId = Guid.NewGuid().ToString(),
+                FilePath = outputPath,
+                Success = true
+            };
         }
     }
 }

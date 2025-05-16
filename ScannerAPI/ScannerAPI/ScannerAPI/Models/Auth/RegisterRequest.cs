@@ -11,11 +11,11 @@ namespace ScannerAPI.Models.Auth
         /// <summary>Email o nombre de usuario.</summary>
         [Required]
         [EmailAddress]
-        public string Username { get; set; }
+        public string Username { get; set; } = string.Empty;
 
         /// <summary>Contraseña (mínimo 8 caracteres).</summary>
         [Required]
         [MinLength(8)]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
     }
 }

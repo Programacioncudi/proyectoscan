@@ -1,4 +1,5 @@
 // File: Models/Events/ScanEvent.cs
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace ScannerAPI.Models.Events
@@ -10,7 +11,7 @@ namespace ScannerAPI.Models.Events
     {
         /// <summary>Identificador del escaneo.</summary>
         [Required]
-        public string ScanId { get; set; }
+        public string ScanId { get; set; } = string.Empty;
 
         /// <summary>Estado actual del escaneo.</summary>
         [Required]

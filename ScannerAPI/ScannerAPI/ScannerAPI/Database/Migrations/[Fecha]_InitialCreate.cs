@@ -1,10 +1,18 @@
+// File: Database/Migrations/InitialCreate.cs
 using Microsoft.EntityFrameworkCore.Migrations;
 using System;
 
 namespace ScannerAPI.Database.Migrations
 {
+    /// <summary>
+    /// Migration inicial que crea las tablas de usuarios, sesiones y historial de escaneos.
+    /// </summary>
     public partial class InitialCreate : Migration
     {
+        /// <summary>
+        /// Aplica los cambios al esquema de la base de datos (creación de tablas y relaciones).
+        /// </summary>
+        /// <param name="migrationBuilder">Constructor de migraciones para definir operaciones de esquema.</param>
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -105,6 +113,10 @@ namespace ScannerAPI.Database.Migrations
                 unique: true);
         }
 
+        /// <summary>
+        /// Revierte los cambios aplicados por la migración (elimina las tablas creadas).
+        /// </summary>
+        /// <param name="migrationBuilder">Constructor de migraciones para definir operaciones de esquema.</param>
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

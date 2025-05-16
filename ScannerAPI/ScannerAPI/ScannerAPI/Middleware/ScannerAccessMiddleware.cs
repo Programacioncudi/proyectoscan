@@ -15,6 +15,12 @@ namespace ScannerAPI.Middleware
         private readonly IAuthorizationService _authorization;
         private readonly ILogger<ScannerAccessMiddleware> _logger;
 
+        /// <summary>
+        /// Inicializa una nueva instancia de <see cref="ScannerAccessMiddleware"/>.
+        /// </summary>
+        /// <param name="next">Delegado al siguiente middleware en la canalización.</param>
+        /// <param name="authorization">Servicio de autorización para validar políticas.</param>
+        /// <param name="logger">Logger para registrar eventos de autorización.</param>
         public ScannerAccessMiddleware(
             RequestDelegate next,
             IAuthorizationService authorization,
@@ -25,6 +31,10 @@ namespace ScannerAPI.Middleware
             _logger = logger;
         }
 
+        /// <summary>
+        /// Invoca el middleware y verifica la política "CanScan" para el usuario.
+        /// </summary>
+        /// <param name="context">Contexto HTTP de la petición.</param>
         public async Task InvokeAsync(HttpContext context)
         {
             // Omitir autorización para endpoints anónimos

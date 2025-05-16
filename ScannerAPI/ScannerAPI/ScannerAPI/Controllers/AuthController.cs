@@ -1,4 +1,3 @@
-// File: Controllers/AuthController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
@@ -6,22 +5,30 @@ using ScannerAPI.Services;
 using ScannerAPI.Models.Api;
 using ScannerAPI.Models.Auth;
 using ScannerAPI.Models;
+using ScannerAPI.Exceptions;
 
 namespace ScannerAPI.Controllers
 {
+    /// <summary>
+    /// Controlador que expone los endpoints de autenticación: registro e inicio de sesión.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
 
+        /// <summary>
+        /// Constructor del controlador de autenticación.
+        /// </summary>
+        /// <param name="authService">Servicio de autenticación inyectado.</param>
         public AuthController(IAuthService authService)
         {
             _authService = authService;
         }
 
         /// <summary>
-        /// Registra un nuevo usuario.
+        /// Registra un nuevo usuario en el sistema.
         /// </summary>
         /// <param name="dto">Datos de registro.</param>
         /// <returns>Token de autenticación y fecha de expiración.</returns>
@@ -45,7 +52,7 @@ namespace ScannerAPI.Controllers
         }
 
         /// <summary>
-        /// Autentica un usuario y genera un token JWT.
+        /// Autentica un usuario existente y genera un token JWT.
         /// </summary>
         /// <param name="dto">Credenciales de login.</param>
         /// <returns>Token JWT y fecha de expiración.</returns>
